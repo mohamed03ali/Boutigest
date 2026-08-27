@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+
+nav{
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+}
+.lien{
+    color: #555;
+    text-decoration: none;
+   padding: 8px 12px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+.lien.active{
+    color: rgb(248, 245, 245);
+    background: #007bff;
+    font-weight: bold;
+    border-bottom: 4px solid red;
+}
+.stock-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stock-table th, .stock-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.stock-table th {
+  background-color: #f8f9fa;
+  color: #333;
+}

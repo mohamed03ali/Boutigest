@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-900: #0f3d2e;   /* vert foncé sidebar/splash */
+  --color-brand-600: #16794f;   /* vert boutons/actions */
+  --color-brand-100: #e6f4ee;   /* fond badges verts */
+  --color-alert-600: #dc2626;   /* rupture stock, dettes en retard */
+  --color-warning-600: #ea580c; /* stock faible */
+  --color-surface: #f7f8fa;     /* fond général */
+}
