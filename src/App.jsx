@@ -71,6 +71,10 @@ import DashboardLayout from './composant/DashboardLayout';
 import Ventes from './pages/Ventes';
 import Produits from './pages/Produits';
 import Stock from './pages/Stock';
+import Clients from './pages/Clients';
+import Dettes from './pages/Dettes';
+import Depenses from './pages/Depenses';
+import Rapports from './pages/Rapports';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -89,6 +93,10 @@ export default function App() {
          <Route path="/ventes" element={<Ventes />} />
           <Route path="/produits" element={<Produits />} />
           <Route path="/stock" element={<Stock />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/dettes" element={<Dettes />} />
+          <Route path="/depenses" element={<Depenses />} /> 
+          <Route path="/rapports" element={<Rapports />} /> 
       </Route>
       <Route path="*" element={<Navigate to="/connexion" />} />
     </Routes>

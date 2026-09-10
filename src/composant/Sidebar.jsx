@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 
-import {LayoutDashboard,ShoppingCart,Package,Boxes,Users,Receipt,Wallet,TrendingUp,Landmark,FileText,UsersRound,Settings,WifiOff, X} from 'lucide-react'
+import {LayoutDashboard,ShoppingCart,Package,Boxes,Users,Receipt,Wallet,TrendingUp,Landmark,FileText,UsersRound,Settings,WifiOff} from 'lucide-react'
 
 
 const MENU = [
@@ -19,7 +19,7 @@ const MENU = [
     
 ]
 
-export default function Sidebar({onNaviguer,onFermer}) {
+export default function Sidebar({onNaviguer}) {
       
     return(
         <aside className="w-64 bg-brand-900 text-white flex flex-col h-screen">
@@ -27,7 +27,7 @@ export default function Sidebar({onNaviguer,onFermer}) {
                 <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center"><ShoppingCart size={18} /></div>
                 <span className="font-semibold tracking-wide">BOUTIGEST</span>
             </div>
-                  {onFermer && (<button onClick={onFermer}><X size={20} className='text-white/70' /></button>)}
+                 
                     <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
                         {MENU.map(({to,label,icon:Icon}) => (
                             <NavLink key={to}

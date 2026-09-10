@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useProduits } from '../services/useProduits';
 import { useVente } from '../services/useVente';
+import { useClients } from '../services/useClients';
 
 function formatCFA(v) {
   return new Intl.NumberFormat('fr-FR').format(v) + ' FCFA';
@@ -13,6 +14,10 @@ export default function Ventes() {
   const [recherche, setRecherche] = useState('');
   const [remise, setRemise] = useState(0);
   const [enCours, setEnCours] = useState(false);
+  const { clients } = useClients();
+  const [modePaiement, setModePaiement] = useState('cash');
+  const [clientSelectionne, setClientSelectionne] = useState('');
+
 
   const produitsFiltres = produits.filter((p) =>
     p.nom.toLowerCase().includes(recherche.toLowerCase())
@@ -20,14 +25,17 @@ export default function Ventes() {
   const total = sousTotal - remise;
 
   async function handleEncaisser() {
-    setEnCours(true);
-    try {
-      await encaisser(remise);
-      setRemise(0);
-    } finally {
-      setEnCours(false);
-    }
+  setEnCours(true);
+  try {
+    await encaisser(remise, modePaiement === 'credit' ? Number(clientSelectionne) : null, modePaiement);
+    setRemise(0);
+    setClientSelectionne('');
+    setModePaiement('cash');
+  } finally {
+    setEnCours(false);
   }
+}
+
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -113,6 +121,63 @@ export default function Ventes() {
             <span>Total</span><span>{formatCFA(total)}</span>
           </div>
         </div>
+        <select
+    value={clientSelectionne}
+    onChange={(e) => setClientSelectionne(e.target.value)}
+    className="w-full mb-2 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+  >
+    <option value="">Sélectionner un client</option>
+    {clients.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
+  </select>
+
+                   <div className="flex gap-2 mb-2">
+                     <button
+    onClick={() => setModePaiement('cash')}
+    className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+      modePaiement === 'cash' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'
+    }`}
+  >
+    Cash
+  </button>
+  <button
+    onClick={() => setModePaiement('credit')}
+    className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+      modePaiement === 'credit' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'
+    }`}
+  >
+    Crédit
+  </button>
+                   </div>
+{/*  <button
+    onClick={() => setModePaiement('cash')}
+    className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+      modePaiement === 'cash' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'
+    }`}
+  >
+    Cash
+  </button>
+  <button
+    onClick={() => setModePaiement('credit')}
+    className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+      modePaiement === 'credit' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'
+    }`}
+  >
+    Crédit
+  </button>
+ </div>
+
+{modePaiement === 'credit' && (
+  <select
+    value={clientSelectionne}
+    onChange={(e) => setClientSelectionne(e.target.value)}
+    className="w-full mb-2 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+  >
+    <option value="">Sélectionner un client</option>
+    {clients.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
+  </select>
+)}*/}
+
+
 
         <button
           onClick={handleEncaisser}

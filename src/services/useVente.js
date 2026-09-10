@@ -52,21 +52,30 @@ export function useVente(produits) {
 
   const sousTotal = panier.reduce((sum, l) => sum + l.prixVente * l.quantite, 0);
 
-  async function encaisser(remise = 0, clientId = null) {
-    if (panier.length === 0) return null;
-    const total = sousTotal - remise;
+ 
+async function encaisser(remise = 0, clientId = null, modePaiement = 'cash') {
+  if (panier.length === 0) return null;
+  if (modePaiement === 'credit' && !clientId) {
+    setAlerte('Sélectionnez un client pour une vente à crédit.');
+    return null;
+  }
 
-    try {
-      const venteId = await db.transaction('rw', db.ventes, db.venteLignes, db.produits, db.mouvementsStock, async () => {
-        // Vérification finale, juste avant d'écrire — voir section 2
+  const total = sousTotal - remise;
+
+  try {
+    const venteId = await db.transaction(
+      'rw', db.ventes, db.venteLignes, db.produits, db.mouvementsStock, db.dettes, db.clients,
+      async () => {
         for (const ligne of panier) {
           const produit = await db.produits.get(ligne.produitId);
           if (!produit || produit.stock < ligne.quantite) {
-            throw new Error(`Stock insuffisant pour "${ligne.nom}" au moment de l'encaissement.`);
+            throw new Error(`Stock insuffisant pour "${ligne.nom}".`);
           }
         }
 
-        const id = await db.ventes.add({ date: new Date().toISOString(), total, remise, clientId });
+        const id = await db.ventes.add({
+          date: new Date().toISOString(), total, remise, clientId, modePaiement,
+        });
 
         for (const ligne of panier) {
           await db.venteLignes.add({
@@ -78,16 +87,28 @@ export function useVente(produits) {
             produitId: ligne.produitId, type: 'sortie', quantite: ligne.quantite, date: new Date().toISOString(),
           });
         }
-        return id;
-      });
 
-      viderPanier();
-      return venteId;
-    } catch (err) {
-      setAlerte(err.message);
-      return null;
-    }
+        // Si vente à crédit : on crée la dette dans la MÊME transaction
+        if (modePaiement === 'credit') {
+          await db.dettes.add({
+            clientId, montant: total, date: new Date().toISOString(), statut: 'retard', venteId: id,
+          });
+          const client = await db.clients.get(clientId);
+          await db.clients.update(clientId, { solde: (client.solde || 0) + total });
+        }
+
+        return id;
+      }
+    );
+
+    viderPanier();
+    return venteId;
+  } catch (err) {
+    setAlerte(err.message);
+    return null;
   }
+}
+
 
   return { panier, ajouterAuPanier, changerQuantite, viderPanier, sousTotal, encaisser, alerte };
 }
