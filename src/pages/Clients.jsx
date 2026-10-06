@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
 import { useClients } from '../services/useClients';
 import FormulaireClient from '../composant/FormulaireClient';
-
-function formatCFA(v) {
+import { useCurrency } from '../context/useCurrency';
+/*function formatCFA(v) {
   return new Intl.NumberFormat('fr-FR').format(v) + ' FCFA';
-}
+}*/
 
 export default function Clients() {
+  const { formatMontant } = useCurrency();
   const { clients, ajouterClient, modifierClient } = useClients();
   const [recherche, setRecherche] = useState('');
   const [modalOuvert, setModalOuvert] = useState(false);
@@ -78,7 +79,7 @@ export default function Clients() {
               </div>
             </div>
             <span className={`text-sm font-medium ${c.solde > 0 ? 'text-alert-600' : 'text-gray-900'}`}>
-              Solde: {formatCFA(c.solde || 0)}
+              Solde: {formatMontant(c.solde || 0)}
             </span>
           </button>
         ))}
@@ -97,3 +98,4 @@ export default function Clients() {
     </div>
   );
 }
+

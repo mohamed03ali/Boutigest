@@ -1,15 +1,24 @@
 import { useState } from 'react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell,Tooltip, ResponsiveContainer } from 'recharts';
 import { useRapports } from '../services/useRapports';
-
+import { useCurrency } from '../context/useCurrency';
+import { genererFacturePDF } from '../services/factureService';
+import { FileDown } from 'lucide-react';
+import { useBoutique } from '../services/useBoutique';
+import { db } from '../db/db';
 const COULEURS = ['#16794f', '#3b82f6', '#f97316', '#8b5cf6', '#ef4444'];
 
-function formatCFA(v) {
+/*function formatCFA(v) {
   return new Intl.NumberFormat('fr-FR').format(v) + ' FCFA';
-}
+}*/
 
 export default function Rapports() {
-  const { totalVentes, totalDepenses, beneficeBrut, beneficeNet, repartitionParCategorie, recalculer } = useRapports();
+   const { formatMontant } = useCurrency();
+    const { boutique } = useBoutique();
+  const {
+    totalVentes, totalDepenses, beneficeBrut, beneficeNet,
+    repartitionParCategorie, ventesPeriode, depensesPeriode, recalculer,
+  } = useRapports();
   const [onglet, setOnglet] = useState('resume');
   const [periode, setPeriode] = useState('mois');
 
@@ -17,6 +26,12 @@ export default function Rapports() {
     setPeriode(p);
     recalculer(p);
   }
+  async function telechargerRecu(vente) {
+    const lignes = await db.venteLignes.where('venteId').equals(vente.id).toArray();
+    const client = vente.clientId ? await db.clients.get(vente.clientId) : null;
+    genererFacturePDF(vente, lignes, boutique, client);
+  }
+
 
   const donneesGraphique = repartitionParCategorie.map((c, i) => ({
     ...c, color: COULEURS[i % COULEURS.length],
@@ -27,15 +42,15 @@ export default function Rapports() {
       <div className="flex items-center justify-between p-5 border-b border-gray-100">
         <h2 className="font-semibold text-gray-900">Rapports</h2>
         <select
-  value={periode}
-  onChange={(e) => changerPeriode(e.target.value)}
-  className="text-sm border border-gray-200 rounded-lg px-2 py-1"
->
-  <option value="jour">Aujourd'hui</option>
-  <option value="semaine">Cette semaine</option>
-  <option value="mois">Ce mois</option>
-  <option value="tout">Depuis le début</option>
-</select>
+          value={periode}
+          onChange={(e) => changerPeriode(e.target.value)}
+          className="text-sm border border-gray-200 rounded-lg px-2 py-1"
+        >
+          <option value="jour">Aujourd'hui</option>
+          <option value="semaine">Cette semaine</option>
+          <option value="mois">Ce mois</option>
+          <option value="tout">Depuis le début</option>
+        </select>
       </div>
 
       <div className="flex border-b border-gray-100 px-5">
@@ -60,21 +75,21 @@ export default function Rapports() {
         <div className="p-5 space-y-4">
           <div className="bg-brand-100 rounded-xl p-4">
             <p className="text-xs text-brand-900 font-medium">Bénéfice net</p>
-            <p className="text-2xl font-bold text-brand-900">{formatCFA(beneficeNet)}</p>
+            <p className="text-2xl font-bold text-brand-900">{formatMontant(beneficeNet)}</p>
             <div className="flex gap-4 mt-2 text-xs text-brand-900/70">
-              <span>Total ventes: {formatCFA(totalVentes)}</span>
-              <span>Total dépenses: {formatCFA(totalDepenses)}</span>
+              <span>Total ventes: {formatMontant(totalVentes)}</span>
+              <span>Total dépenses: {formatMontant(totalDepenses)}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs text-gray-500">Bénéfice brut</p>
-              <p className="text-lg font-semibold text-gray-900">{formatCFA(beneficeBrut)}</p>
+              <p className="text-lg font-semibold text-gray-900">{formatMontant(beneficeBrut)}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs text-gray-500">Dépenses</p>
-              <p className="text-lg font-semibold text-alert-600">-{formatCFA(totalDepenses)}</p>
+              <p className="text-lg font-semibold text-alert-600">-{formatMontant(totalDepenses)}</p>
             </div>
           </div>
 
@@ -89,7 +104,7 @@ export default function Rapports() {
                     <Pie data={donneesGraphique} dataKey="valeur" innerRadius={35} outerRadius={60}>
                       {donneesGraphique.map((entry) => <Cell key={entry.nom} fill={entry.color} />)}
                     </Pie>
-                    <Tooltip formatter={(v) => formatCFA(v)} />
+                    <Tooltip formatter={(v) => formatMontant(v)} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="space-y-1">
@@ -107,11 +122,52 @@ export default function Rapports() {
       )}
 
       {onglet === 'ventes' && (
-        <p className="text-sm text-gray-400 text-center py-8 px-5">Détail des ventes — à affiner selon tes besoins.</p>
+        <div className="divide-y divide-gray-100">
+          {ventesPeriode.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-8">Aucune vente sur cette période.</p>
+          )}
+          {ventesPeriode.map((v) => (
+            <div key={v.id} className="flex items-center justify-between px-5 py-3">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  {v.nomClient || 'Vente comptoir'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {new Date(v.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  {' · '}{v.nombreArticles} article{v.nombreArticles > 1 ? 's' : ''}
+                  {' · '}{v.modePaiement === 'credit' ? 'Crédit' : 'Cash'}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-gray-900">{formatMontant(v.total)}</span>
+                <button onClick={() => telechargerRecu(v)} className="text-brand-600">
+                  <FileDown size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+        
+      
+</div>
       )}
       {onglet === 'depenses' && (
-        <p className="text-sm text-gray-400 text-center py-8 px-5">Détail des dépenses — à affiner selon tes besoins.</p>
+        <div className="divide-y divide-gray-100">
+          {depensesPeriode.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-8">Aucune dépense sur cette période.</p>
+          )}
+          {depensesPeriode.map((d) => (
+            <div key={d.id} className="flex items-center justify-between px-5 py-3">
+              <div>
+                <p className="text-sm font-medium text-gray-900">{d.libelle}</p>
+                <p className="text-xs text-gray-500">
+                  {d.categorie} · {new Date(d.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                </p>
+              </div>
+              <span className="text-sm font-medium text-alert-600">{formatMontant(d.montant)}</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
-  );
-}
+  
+    )}

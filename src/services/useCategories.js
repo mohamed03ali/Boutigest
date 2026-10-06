@@ -1,26 +1,24 @@
-/*import { useState, useEffect, useCallback } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { CATEGORIES_PAR_DEFAUT } from '../data/categories';
 
 export function useCategories(type) {
-  const [categories, setCategories] = useState([]);
+  const personnalisees = useLiveQuery(
+    () => db.categories.where('type').equals(type).filter((c) => !c.deleted).toArray(),
+    [type] // la requête se relance si `type` change (ex: passer de 'depense' à 'produit')
+  );
 
-  const recharger = useCallback(async () => {
-    const personnalisees = await db.categories.where('type').equals(type).toArray();
-    const parDefaut = CATEGORIES_PAR_DEFAUT[type] || [];
-    setCategories([...parDefaut, ...personnalisees]);
-  }, [type]);
-
-  useEffect(() => {
-    recharger();
-  }, [recharger]);
+  const parDefaut = CATEGORIES_PAR_DEFAUT[type] || [];
+  const categories = [...parDefaut, ...(personnalisees || [])];
 
   async function ajouterCategorie(nom, icone) {
-    await db.categories.add({ type, nom, icone });
-    await recharger();
+    const maintenant = new Date().toISOString();
+    await db.categories.add({
+      id: crypto.randomUUID(),
+      type, nom, icone,
+      updatedAt: maintenant, deleted: false,
+    });
   }
 
   return { categories, ajouterCategorie };
 }
-
-*/

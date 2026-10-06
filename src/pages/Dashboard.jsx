@@ -5,10 +5,10 @@ import ActiviteRecente from '../composant/ActiviteRecente';
 import AlerteStockFaible from '../composant/AlerteStockFaible';
 import { useDashboardStats } from '../services/useDashboardStats';
 import { useDashboardActivite } from '../services/useDashboardActivite';
-
-function formatCFA(v) {
+import { useCurrency } from '../context/useCurrency';
+/*function formatCFA(v) {
   return new Intl.NumberFormat('fr-FR').format(v) + ' FCFA';
-}
+}*/
 
 const LABELS_VENTES = {
   jour: 'Ventes du jour',
@@ -25,6 +25,7 @@ const LABELS_BENEFICE = {
 };
 
 export default function Dashboard() {
+   const { formatMontant } = useCurrency();
   const [periode, setPeriode] = useState('jour');
   const stats = useDashboardStats(periode);
   const { activites, produitsStockFaible } = useDashboardActivite();
@@ -34,10 +35,10 @@ export default function Dashboard() {
       <SelecteurPeriode valeur={periode} onChange={setPeriode} />
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label={LABELS_VENTES[periode]} value={formatCFA(stats.ventes)} accent="green" />
-        <StatCard label={LABELS_BENEFICE[periode]} value={formatCFA(stats.benefice)} accent="blue" />
+        <StatCard label={LABELS_VENTES[periode]} value={formatMontant(stats.ventes)} accent="green" />
+        <StatCard label={LABELS_BENEFICE[periode]} value={formatMontant(stats.benefice)} accent="blue" />
         <StatCard label="Produits en stock" value={stats.produitsEnStock} accent="purple" />
-        <StatCard label="Dettes clients" value={formatCFA(stats.dettesTotal)} accent="orange" />
+        <StatCard label="Dettes clients" value={formatMontant(stats.dettesTotal)} accent="orange" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

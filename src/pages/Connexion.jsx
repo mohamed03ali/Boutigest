@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import bcrypt from 'bcryptjs';
-import { db } from '../db/db';
-
+import { Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../services/useAuth';
 
 export default function Connexion() {
   const navigate = useNavigate();
+  const { login, initialisationEnCours } = useAuth();
   const [identifiant, setIdentifiant] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [afficherMdp, setAfficherMdp] = useState(false);
@@ -17,33 +17,13 @@ export default function Connexion() {
     setErreur('');
     setChargement(true);
     try {
-      const utilisateur = await db.utilisateurs
-        .where('email').equals(identifiant)
-        .or('telephone').equals(identifiant)
-        .first();
-
-      /*if (!utilisateur || utilisateur.motDePasse !== motDePasse) {
-        setErreur('Identifiants incorrects.');
+      const succes = await login(identifiant, motDePasse);
+      if (!succes) {
+        setErreur('Identifiants incorrects, ou connexion internet requise pour un nouvel appareil.');
         return;
-      }*/
-     if (!utilisateur) {
-      setErreur('Identifiants incorrects.');
-      return
-     }
-     const motDepasseValide = await bcrypt.compare(motDePasse,utilisateur.motDePasse)
-     if (!motDepasseValide) {
-      setErreur('Identifiants incorrects.');
-      return
-     }
-
-      localStorage.setItem('currentUser', JSON.stringify(utilisateur));
-
-      // A-t-il déjà une boutique configurée ?
-      const boutique = await db.boutiques
-        .where('utilisateurId').equals(utilisateur.id).first();
-      navigate(boutique ? '/dashboard' : '/configuration-boutique');
+      }
+      navigate('/dashboard');
     } catch (err) {
-      console.error(err)
       setErreur('Une erreur est survenue, réessaie.');
     } finally {
       setChargement(false);
@@ -88,9 +68,9 @@ export default function Connexion() {
             <button
               type="button"
               onClick={() => setAfficherMdp((v) => !v)}
-              className="absolute right-3 top-8 text-gray-400 text-sm"
+              className="absolute right-3 top-8 text-gray-400"
             >
-              👁
+              {afficherMdp ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </label>
 
@@ -100,11 +80,11 @@ export default function Connexion() {
 
           <button
             type="submit"
-            disabled={chargement}
+            disabled={chargement || initialisationEnCours}
             className="w-full bg-brand-600 text-white rounded-lg py-2.5 text-sm font-medium
                        hover:bg-brand-900 transition-colors disabled:opacity-50"
           >
-            {chargement ? 'Connexion...' : 'Se connecter'}
+            {initialisationEnCours ? 'Récupération de vos données...' : chargement ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
 

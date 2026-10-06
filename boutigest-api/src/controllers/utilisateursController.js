@@ -60,3 +60,29 @@ export async function supprimer(req, res) {
     res.status(500).json({ erreur: 'Erreur serveur.' });
   }
 }
+
+
+
+
+export async function changerMotDePasse(req, res) {
+  const { id } = req.params;
+  const { motDePasse } = req.body;
+
+  if (!motDePasse || motDePasse.length < 6) {
+    return res.status(400).json({ erreur: 'Mot de passe invalide.' });
+  }
+
+  // Un utilisateur ne peut changer que SON PROPRE mot de passe
+  if (req.utilisateur.id !== id) {
+    return res.status(403).json({ erreur: 'Action non autorisée.' });
+  }
+
+  try {
+    const motDePasseHache = await bcrypt.hash(motDePasse, 10);
+    await db.query('UPDATE utilisateurs SET mot_de_passe = ? WHERE id = ?', [motDePasseHache, id]);
+    res.json({ message: 'Mot de passe mis à jour.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erreur: 'Erreur serveur.' });
+  }
+}

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import db from '../config/db.js';
 
 export async function creer(req, res) {
@@ -7,15 +8,16 @@ export async function creer(req, res) {
   }
 
   try {
-    const [resultat] = await db.query(
-      'INSERT INTO boutiques (utilisateur_id, nom, type_commerce, devise) VALUES (?, ?, ?, ?)',
-      [req.utilisateur.id, nom, typeCommerce || null, devise || 'CFA - Franc CFA']
+    const id = randomUUID();
+
+    await db.query(
+      'INSERT INTO boutiques (id, utilisateur_id, nom, type_commerce, devise) VALUES (?, ?, ?, ?, ?)',
+      [id, req.utilisateur.id, nom, typeCommerce || null, devise || 'CFA - Franc CFA']
     );
 
-    // Lie immédiatement cette boutique à l'utilisateur connecté
-    await db.query('UPDATE utilisateurs SET boutique_id = ? WHERE id = ?', [resultat.insertId, req.utilisateur.id]);
+    await db.query('UPDATE utilisateurs SET boutique_id = ? WHERE id = ?', [id, req.utilisateur.id]);
 
-    res.status(201).json({ id: resultat.insertId, nom, typeCommerce, devise });
+    res.status(201).json({ id, nom, typeCommerce, devise });
   } catch (err) {
     console.error(err);
     res.status(500).json({ erreur: 'Erreur serveur.' });

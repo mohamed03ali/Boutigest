@@ -1,5 +1,5 @@
 import { ShoppingCart, Package, Users } from 'lucide-react';
-
+import { Link } from 'react-router-dom';
 const ICONES = {
   vente: { Icon: ShoppingCart, color: 'text-brand-600 bg-brand-100' },
   stock: { Icon: Package, color: 'text-blue-600 bg-blue-50' },
@@ -25,7 +25,11 @@ function tempsEcoule(date) {
 export default function ActiviteRecente({ activites }) {
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm">
-      <h3 className="text-sm font-medium text-gray-700 mb-4">Activité récente</h3>
+      <div className="flex items-center justify-between mb-4">
+  <h3 className="text-sm font-medium text-gray-700">Activité récente</h3>
+  <Link to="/activite" className="text-xs text-brand-600 font-medium">Voir tout</Link>
+</div>
+
       <div className="space-y-2">
         {activites.length === 0 && (
           <p className="text-sm text-gray-400">Aucune activité pour le moment.</p>
@@ -35,9 +39,9 @@ export default function ActiviteRecente({ activites }) {
           return (
             <div key={a.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
-                  <Icon size={16} />
-                </div>
+               <div className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm ${color}`}>
+  <Icon size={15} />
+               </div> 
                 <div>
                   <p className="text-sm text-gray-900">{a.titre}</p>
                   <p className="text-xs text-gray-500">{a.sousTitre}</p>

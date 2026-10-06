@@ -2,31 +2,17 @@
 import { Outlet } from 'react-router-dom';
 import Header from "../composant/Header"
 import Sidebar from "../composant/Sidebar"
-
-/*
-export default function DashboardLayout() {
-  const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
-
-  return (
-    <div className="flex h-screen bg-surface">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header nomUtilisateur={user?.nom} />
-        <main className="flex-1 overflow-y-auto p-8">
-          <Outlet />
-        </main>
-      </div>
-    </div>
-  );
-}
-*/
-// DashboardLayout.jsx
+import { useSyncAuto } from '../services/useSyncAuto';
+import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { Menu} from 'lucide-react';
+import InvitationInstallation from './InvitationInstallation';
 
 export default function DashboardLayout() {
+  const { enCours } = useSyncAuto();
   const [sidebarOuverte, setSidebarOuverte] = useState(false);
   const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  
 
   return (
     <div className="flex h-screen bg-surface">
@@ -60,12 +46,18 @@ export default function DashboardLayout() {
           </button>
           <span className="font-semibold text-gray-900">Boutigest</span>
         </div>
-
-        <Header nomUtilisateur={user?.nom} />
+     {enCours && (
+    <div className="bg-blue-50 text-blue-700 text-xs px-4 py-1.5 flex items-center gap-2">
+      <RefreshCw size={12} className="animate-spin" /> Synchronisation en cours...
+    </div>)}
+    
+<Header nomUtilisateur={user?.nom} photoBoutique={user?.photoUrl} />
+        
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <Outlet />
         </main>
       </div>
+        <InvitationInstallation />
     </div>
   );
 }

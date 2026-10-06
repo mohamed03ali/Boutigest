@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 
 function debutPeriode(periode) {
@@ -19,15 +19,7 @@ function debutPeriode(periode) {
 }
 
 export function useDashboardStats(periode = 'jour') {
-  const [stats, setStats] = useState({
-    ventes: 0,
-    benefice: 0,
-    produitsEnStock: 0,
-    dettesTotal: 0,
-    nombreClientsDettes: 0,
-  });
-
-  const charger = useCallback(async () => {
+  const stats = useLiveQuery(async () => {
     const debut = debutPeriode(periode);
 
     const ventesPeriode = await db.ventes.where('date').aboveOrEqual(debut.toISOString()).toArray();
@@ -51,12 +43,8 @@ export function useDashboardStats(periode = 'jour') {
     const dettesTotal = dettesImpayees.reduce((sum, d) => sum + d.montant, 0);
     const nombreClientsDettes = new Set(dettesImpayees.map((d) => d.clientId)).size;
 
-    setStats({ ventes, benefice, produitsEnStock, dettesTotal, nombreClientsDettes });
+    return { ventes, benefice, produitsEnStock, dettesTotal, nombreClientsDettes };
   }, [periode]);
 
-  useEffect(() => {
-    charger();
-  }, [charger]);
-
-  return stats;
+  return stats || { ventes: 0, benefice: 0, produitsEnStock: 0, dettesTotal: 0, nombreClientsDettes: 0 };
 }

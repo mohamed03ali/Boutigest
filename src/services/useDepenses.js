@@ -1,29 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 
 export function useDepenses() {
-  const [depenses, setDepenses] = useState([]);
-
-  const recharger = useCallback(async () => {
-    const toutes = await db.depenses.orderBy('date').reverse().toArray();
-    setDepenses(toutes);
-  }, []);
-
-  useEffect(() => {
-    recharger();
-  }, [recharger]);
+  const depenses = useLiveQuery(
+    () => db.depenses.orderBy('date').reverse().filter((d) => !d.deleted).toArray(),
+    []
+  );
 
   async function ajouterDepense(donnees) {
-    await db.depenses.add({ ...donnees, date: new Date().toISOString() });
-    await recharger();
+    const maintenant = new Date().toISOString();
+    await db.depenses.add({ ...donnees, id: crypto.randomUUID(), date: maintenant, updatedAt: maintenant, deleted: false });
   }
 
   async function supprimerDepense(id) {
-    await db.depenses.delete(id);
-    await recharger();
+    await db.depenses.update(id, { deleted: true, updatedAt: new Date().toISOString() });
   }
 
-  const totalMois = depenses
+  const liste = depenses || [];
+  const totalMois = liste
     .filter((d) => {
       const date = new Date(d.date);
       const maintenant = new Date();
@@ -31,5 +25,5 @@ export function useDepenses() {
     })
     .reduce((sum, d) => sum + d.montant, 0);
 
-  return { depenses, ajouterDepense, supprimerDepense, totalMois };
+  return { depenses: liste, ajouterDepense, supprimerDepense, totalMois };
 }

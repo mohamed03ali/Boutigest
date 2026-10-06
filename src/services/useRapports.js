@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 
 function debutPeriode(periode) {
@@ -19,28 +20,22 @@ function debutPeriode(periode) {
 }
 
 export function useRapports() {
-  const [donnees, setDonnees] = useState({
-    totalVentes: 0,
-    totalDepenses: 0,
-    beneficeBrut: 0,
-    beneficeNet: 0,
-    repartitionParCategorie: [],
-  });
+  const [periode, setPeriode] = useState('mois');
 
-  const calculer = useCallback(async (periode = 'mois') => {
+  const donnees = useLiveQuery(async () => {
     const debut = debutPeriode(periode);
 
-    const ventes = await db.ventes.where('date').aboveOrEqual(debut.toISOString()).toArray();
+    const ventes = await db.ventes.where('date').aboveOrEqual(debut.toISOString()).reverse().sortBy('date');
     const venteLignes = await db.venteLignes.toArray();
     const produits = await db.produits.toArray();
-    const depenses = await db.depenses.where('date').aboveOrEqual(debut.toISOString()).toArray();
+    const clients = await db.clients.toArray();
+    const depenses = await db.depenses.where('date').aboveOrEqual(debut.toISOString()).reverse().sortBy('date');
 
     const idsVentesPeriode = new Set(ventes.map((v) => v.id));
     const lignesPeriode = venteLignes.filter((l) => idsVentesPeriode.has(l.venteId));
 
     let beneficeBrut = 0;
     const parCategorie = {};
-
     for (const ligne of lignesPeriode) {
       const produit = produits.find((p) => p.id === ligne.produitId);
       if (!produit) continue;
@@ -48,6 +43,12 @@ export function useRapports() {
       const cat = produit.categorie || 'Autre';
       parCategorie[cat] = (parCategorie[cat] || 0) + ligne.prixUnitaire * ligne.quantite;
     }
+
+    const ventesPeriode = ventes.map((v) => ({
+      ...v,
+      nomClient: clients.find((c) => c.id === v.clientId)?.nom || null,
+      nombreArticles: venteLignes.filter((l) => l.venteId === v.id).reduce((sum, l) => sum + l.quantite, 0),
+    }));
 
     const totalVentes = ventes.reduce((sum, v) => sum + v.total, 0);
     const totalDepenses = depenses.reduce((sum, d) => sum + d.montant, 0);
@@ -58,12 +59,17 @@ export function useRapports() {
       nom, valeur, pourcentage: Math.round((valeur / totalCategories) * 100),
     }));
 
-    setDonnees({ totalVentes, totalDepenses, beneficeBrut, beneficeNet, repartitionParCategorie });
-  }, []);
+    return {
+      totalVentes, totalDepenses, beneficeBrut, beneficeNet, repartitionParCategorie,
+      ventesPeriode, depensesPeriode: depenses,
+    };
+  }, [periode]);
 
-  useEffect(() => {
-    calculer('mois'); // valeur par défaut au premier chargement
-  }, [calculer]);
-
-  return { ...donnees, recalculer: calculer };
+  return {
+    ...(donnees || {
+      totalVentes: 0, totalDepenses: 0, beneficeBrut: 0, beneficeNet: 0,
+      repartitionParCategorie: [], ventesPeriode: [], depensesPeriode: [],
+    }),
+    recalculer: setPeriode, // Rapports.jsx appelle déjà recalculer(p) — ça devient juste un setPeriode
+  };
 }

@@ -1,5 +1,11 @@
-import './env.js';
+// boutigest-api/src/config/db.js
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import mysql from 'mysql2/promise';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -8,6 +14,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
+  decimalNumbers: true, // ← la ligne qui règle le NaN
 });
 
 export default pool;

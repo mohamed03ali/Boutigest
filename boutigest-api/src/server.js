@@ -14,7 +14,9 @@ import zakatsRoutes from './routes/zakats.js';
 import notificationsRoutes from './routes/notifications.js';
 import categoriesRoutes from './routes/categories.js';
 import utilisateursRoutes from './routes/utilisateurs.js';
+import syncRoutes from './routes/sync.js';
 
+  
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -31,6 +33,7 @@ app.use('/zakats', zakatsRoutes);
 app.use('/notifications', notificationsRoutes);
 app.use('/categories', categoriesRoutes);
 app.use('/utilisateurs', utilisateursRoutes);	
+app.use('/sync', syncRoutes);
 
 app.get('/', (req, res) => res.json({ message: 'Boutigest API en ligne' }));
 

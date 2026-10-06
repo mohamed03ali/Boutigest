@@ -10,14 +10,14 @@ export default function AlerteStockFaible({ produits }) {
           <p className="text-sm text-gray-400">Aucune alerte, stock ok.</p>
         )}
         {produits.map((p) => {
-          const pourcentage = Math.min(100, (p.stock / p.seuilReappro) * 100);
+          const pourcentage = Math.min(100, (p.quantite / (p.seuilReapro || 10)) * 100);
           return (
             <div key={p.id} className="bg-gray-50 rounded-lg p-3">
               <p className="text-sm text-gray-900">{p.nom}</p>
-              <p className="text-xs text-gray-500 mb-2">SKU : {p.sku || `PRD-${p.id}`}</p>
+              {p.sku && <p className="text-xs text-gray-500 mb-2">Réf: {p.sku}</p>}
               <div className="flex items-center justify-between text-xs mb-1">
-                <span className="text-alert-600 font-medium">Stock : {p.stock}</span>
-                <span className="text-gray-400">Réappro. : {p.seuilReappro}</span>
+                <span className="text-alert-600 font-medium">Stock : {p.quantite}</span>
+                <span className="text-gray-400">Seuil : {p.seuilReapro || 10}</span>
               </div>
               <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                 <div className="h-full bg-alert-600" style={{ width: `${pourcentage}%` }} />
@@ -29,4 +29,3 @@ export default function AlerteStockFaible({ produits }) {
     </div>
   );
 }
-

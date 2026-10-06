@@ -3,14 +3,15 @@ import { Search } from 'lucide-react';
 import { useProduits } from '../services/useProduits';
 import { useVente } from '../services/useVente';
 import { useClients } from '../services/useClients';
-
-function formatCFA(v) {
+import { useCurrency } from '../context/useCurrency';
+/*function formatCFA(v) {
   return new Intl.NumberFormat('fr-FR').format(v) + ' FCFA';
-}
+}*/
 
 export default function Ventes() {
+  const { formatMontant } = useCurrency();
   const { produits } = useProduits();
-  const { panier, ajouterAuPanier, changerQuantite, sousTotal, encaisser,alerte } = useVente();
+  const { panier, ajouterAuPanier, changerQuantite, sousTotal, encaisser,alerte } = useVente(produits);
   const [recherche, setRecherche] = useState('');
   const [remise, setRemise] = useState(0);
   const [enCours, setEnCours] = useState(false);
@@ -27,7 +28,7 @@ export default function Ventes() {
   async function handleEncaisser() {
   setEnCours(true);
   try {
-    await encaisser(remise, modePaiement === 'credit' ? Number(clientSelectionne) : null, modePaiement);
+    await encaisser(remise, modePaiement === 'credit' ? (clientSelectionne) : null, modePaiement);
     setRemise(0);
     setClientSelectionne('');
     setModePaiement('cash');
@@ -58,7 +59,7 @@ export default function Ventes() {
 <button
   key={p.id}
   onClick={() => ajouterAuPanier(p)}
-  disabled={p.stock <= 0}
+  disabled={p.quantite <= 0}
   className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 text-left disabled:opacity-40 disabled:cursor-not-allowed"
 >
   <div>
@@ -67,7 +68,7 @@ export default function Ventes() {
       {p.stock <= 0 ? 'Rupture de stock' : `Stock: ${p.stock}`}
     </p>
   </div>
-  <span className="text-sm font-medium text-gray-900">{formatCFA(p.prixVente)}</span>
+  <span className="text-sm font-medium text-gray-900">{formatMontant(p.prixVente)}</span>
 </button>
 
           ))}
@@ -100,7 +101,7 @@ export default function Ventes() {
                 <button onClick={() => changerQuantite(l.produitId, -1)} className="w-6 h-6 rounded bg-gray-200 text-sm">−</button>
                 <span className="text-sm w-4 text-center">{l.quantite}</span>
                 <button onClick={() => changerQuantite(l.produitId, 1)} className="w-6 h-6 rounded bg-gray-200 text-sm">+</button>
-                <span className="text-sm font-medium w-20 text-right">{formatCFA(l.prixVente * l.quantite)}</span>
+                <span className="text-sm font-medium w-20 text-right">{formatMontant(l.prixVente * l.quantite)}</span>
               </div>
             </div>
           ))}
@@ -108,7 +109,7 @@ export default function Ventes() {
 
         <div className="border-t border-gray-100 pt-3 mt-3 space-y-1">
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Sous-total</span><span>{formatCFA(sousTotal)}</span>
+            <span>Sous-total</span><span>{formatMontant(sousTotal)}</span>
           </div>
           <div className="flex justify-between text-sm text-gray-600 items-center">
             <span>Remise</span>
@@ -118,7 +119,7 @@ export default function Ventes() {
             />
           </div>
           <div className="flex justify-between text-base font-semibold text-gray-900 pt-1">
-            <span>Total</span><span>{formatCFA(total)}</span>
+            <span>Total</span><span>{formatMontant(total)}</span>
           </div>
         </div>
         <select
@@ -148,37 +149,6 @@ export default function Ventes() {
     Crédit
   </button>
                    </div>
-{/*  <button
-    onClick={() => setModePaiement('cash')}
-    className={`flex-1 py-2 rounded-lg text-sm font-medium ${
-      modePaiement === 'cash' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'
-    }`}
-  >
-    Cash
-  </button>
-  <button
-    onClick={() => setModePaiement('credit')}
-    className={`flex-1 py-2 rounded-lg text-sm font-medium ${
-      modePaiement === 'credit' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'
-    }`}
-  >
-    Crédit
-  </button>
- </div>
-
-{modePaiement === 'credit' && (
-  <select
-    value={clientSelectionne}
-    onChange={(e) => setClientSelectionne(e.target.value)}
-    className="w-full mb-2 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-  >
-    <option value="">Sélectionner un client</option>
-    {clients.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
-  </select>
-)}*/}
-
-
-
         <button
           onClick={handleEncaisser}
           disabled={panier.length === 0 || enCours}
@@ -187,6 +157,7 @@ export default function Ventes() {
           {enCours ? 'Encaissement...' : 'Encaisser'}
         </button>
       </div>
+      
     </div>
   );
 }

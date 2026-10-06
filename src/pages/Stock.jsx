@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useProduits } from '../services/useProduits';
 import MouvementsStock from './MouvementsStock';
+import InventaireStock from '../composant/InventaireStock';
 
 export default function Stock() {
   const { produits } = useProduits();
@@ -15,6 +16,7 @@ export default function Stock() {
 
   const stockFaible = produits.filter((p) => p.stock > 0 && p.stock <= (p.seuilReappro || 10));
   const rupture = produits.filter((p) => p.stock <= 0);
+  const quantiteTotaleStock = produits.reduce((total, p) => total + (Number(p.stock) || 0), 0);
 
   function statutProduit(p) {
     if (p.stock <= 0) return { label: 'Rupture', className: 'bg-red-50 text-alert-600' };
@@ -27,7 +29,11 @@ export default function Stock() {
       <div className="p-5 border-b border-gray-100">
         <h2 className="font-semibold text-gray-900 mb-4">Stock</h2>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div className="bg-brand-50 rounded-lg px-4 py-3">
+            <p className="text-xs text-brand-600 font-medium">Quantité totale en stock</p>
+            <p className="text-lg font-semibold text-gray-900">{quantiteTotaleStock} unités</p>
+          </div>
           <div className="bg-orange-50 rounded-lg px-4 py-3">
             <p className="text-xs text-warning-600 font-medium">Stock faible</p>
             <p className="text-lg font-semibold text-gray-900">{stockFaible.length} produits</p>
@@ -86,7 +92,7 @@ export default function Stock() {
       )}
 
       {onglet === 'mouvements' && <MouvementsStock />}
-      {onglet === 'inventaire' && <p className="text-sm text-gray-400 text-center py-8">Inventaire — à venir.</p>}
+      {onglet === 'inventaire' && <InventaireStock />}
     </div>
   );
 }

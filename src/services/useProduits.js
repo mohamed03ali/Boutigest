@@ -1,34 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 
 export function useProduits() {
-  const [produits, setProduits] = useState([]);
-  const [chargement, setChargement] = useState(true);
-
-  const recharger = useCallback(async () => {
-    const tous = await db.produits.orderBy('nom').toArray();
-    setProduits(tous);
-    setChargement(false);
-  }, []);
-
-  useEffect(() => {
-    recharger();
-  }, [recharger]);
+  const produits = useLiveQuery(
+    () => db.produits.orderBy('nom').filter((p) => !p.deleted).toArray(),
+    []
+  );
 
   async function ajouterProduit(donnees) {
-    await db.produits.add(donnees);
-    await recharger();
+    await db.produits.add({ ...donnees, id: crypto.randomUUID(), updatedAt: new Date().toISOString(), deleted: false });
   }
 
   async function modifierProduit(id, donnees) {
-    await db.produits.update(id, donnees);
-    await recharger();
+    await db.produits.update(id, { ...donnees, updatedAt: new Date().toISOString() });
   }
 
   async function supprimerProduit(id) {
-    await db.produits.delete(id);
-    await recharger();
+    await db.produits.update(id, { deleted: true, updatedAt: new Date().toISOString() });
   }
 
-  return { produits, chargement, ajouterProduit, modifierProduit, supprimerProduit };
+  return { produits: produits || [], chargement: produits === undefined, ajouterProduit, modifierProduit, supprimerProduit };
 }
