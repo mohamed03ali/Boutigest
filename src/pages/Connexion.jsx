@@ -24,7 +24,7 @@ export default function Connexion() {
       }
       navigate('/dashboard');
     } catch (err) {
-      setErreur('Une erreur est survenue, réessaie.');
+      setErreur('Une erreur est survenue, réessaie.',err);
     } finally {
       setChargement(false);
     }
@@ -50,7 +50,7 @@ export default function Connexion() {
             <input
               value={identifiant}
               onChange={(e) => setIdentifiant(e.target.value)}
-              placeholder="exemple@email.com"
+              placeholder="téléphone ou email"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-brand-600"
             />

@@ -24,7 +24,7 @@ export default function Sidebar({ onNaviguer }) {
     return(
         <aside className="w-64 bg-brand-900 text-white flex flex-col h-screen">
             <div className="flex items-center gap-2 px-6 py-5">
-                <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center"><ShoppingCart size={18} /></div>
+                <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center"><ShoppingCart size={20} /></div>
                 <span className="font-semibold tracking-wide">BOUTIGEST</span>
             </div>
                  
