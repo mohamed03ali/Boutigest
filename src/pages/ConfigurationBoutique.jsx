@@ -1,16 +1,42 @@
-// src/pages/ConfigurationBoutique.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../db/db';
 import { getSyncToken } from '../services/syncAuth';
-
+import { useAuth } from '../services/useAuth';
 
 const API_URL = 'http://localhost:3000';
-const TYPES_COMMERCE = ['Épicerie', 'Boutique de vêtements', 'Quincaillerie', 'Pharmacie', 'Autre'];
+
+const TYPES_COMMERCE = [
+  'Épicerie',
+  'Boutique de vêtements',
+  'Quincaillerie',
+  'Pharmacie',
+  'Boulangerie / Pâtisserie',
+  'Boucherie',
+  'Poissonnerie',
+  'Vente de céréales et vivres',
+  'Dépôt de boissons',
+  'Restaurant / Gargote',
+  'Cybercafé',
+  'Vente de téléphones et accessoires',
+  'Salon de coiffure / Esthétique',
+  'Atelier de couture',
+  'Cordonnerie',
+  'Garage / Mécanique auto-moto',
+  'Vente de pièces détachées',
+  'Matériaux de construction',
+  'Électroménager',
+  'Bijouterie',
+  'Librairie / Papeterie',
+  'Station-service',
+  'Agence de transport / voyage',
+  'Autre',
+];
 const DEVISES = ['CFA - Franc CFA', 'EUR - Euro', 'USD - Dollar'];
 
 export default function ConfigurationBoutique() {
   const navigate = useNavigate();
+  const { ouvrirSession } = useAuth();
   const [form, setForm] = useState({
     nom: 'Ma Boutique',
     typeCommerce: 'Épicerie',
@@ -26,8 +52,8 @@ export default function ConfigurationBoutique() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setErreur('');
     setChargement(true);
+    setErreur('');
 
     try {
       const user = JSON.parse(localStorage.getItem('currentUser'));
@@ -35,45 +61,54 @@ export default function ConfigurationBoutique() {
       const maintenant = new Date().toISOString();
       let idBoutique;
 
+      // Le réseau est optionnel : toute erreur ici ne doit jamais empêcher
+      // la création locale de la boutique (app offline-first).
       if (navigator.onLine && token) {
-        const reponse = await fetch(`${API_URL}/boutiques`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(form),
-        });
-
-        if (reponse.ok) {
-          const donnees = await reponse.json();
-          idBoutique = donnees.id; // même id des deux côtés, comme pour le compte
+        try {
+          const reponse = await fetch(`${API_URL}/boutiques`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(form),
+          });
+          if (reponse.ok) {
+            const donnees = await reponse.json();
+            idBoutique = donnees.id;
+          }
+        } catch (err) {
+          console.error('Création boutique serveur impossible, repli local:', err);
         }
       }
 
-      // Si le serveur n'a pas répondu (hors ligne, ou token absent), on garde un id local
+      // Pas d'id serveur (hors ligne, token absent, ou échec réseau) → id local
       if (!idBoutique) idBoutique = crypto.randomUUID();
 
-      // ConfigurationBoutique.jsx — dans handleSubmit, après avoir déterminé idBoutique
-await db.boutiques.add({
-  id: idBoutique,
-  ...form,
-  updatedAt: maintenant,
-  deleted: false,
-});
+      // IMPORTANT : on utilise idBoutique (celui du serveur si dispo) comme id
+      // local, pour que la boutique locale et le boutiqueId de l'utilisateur
+      // pointent vers la MÊME ligne — sinon useBoutique() ne la retrouve jamais.
+      await db.boutiques.add({
+        id: idBoutique,
+        ...form,
+        utilisateurId: user.id,
+        updatedAt: maintenant,
+        deleted: false,
+      });
 
-// on enregistre le lien boutique ↔ utilisateur sur l'utilisateur, pas sur la boutique
-await db.utilisateurs.update(user.id, { boutiqueId: idBoutique, updatedAt: maintenant });
+      await db.utilisateurs.update(user.id, { boutiqueId: idBoutique, updatedAt: maintenant });
 
-const utilisateurMisAJour = { ...user, boutiqueId: idBoutique };
-localStorage.setItem('currentUser', JSON.stringify(utilisateurMisAJour));
-
-
+      const utilisateurMisAJour = { ...user, boutiqueId: idBoutique };
+      localStorage.setItem('currentUser', JSON.stringify(utilisateurMisAJour));
+      // Met à jour le contexte React EN MÉMOIRE, pas seulement localStorage —
+      // sinon le reste de l'app (useBoutique, Sidebar, etc.) garde l'ancien
+      // user jusqu'au prochain rechargement complet.
+      ouvrirSession(utilisateurMisAJour);
 
       navigate('/dashboard');
     } catch (err) {
       console.error(err);
-      setErreur('Une erreur est survenue.');
+      setErreur(err.message || 'Impossible de contacter le serveur. Vérifiez votre connexion.');
     } finally {
       setChargement(false);
     }
@@ -89,7 +124,7 @@ localStorage.setItem('currentUser', JSON.stringify(utilisateurMisAJour));
         <p className="text-sm text-gray-500 mt-1 mb-6">Informations de votre commerce</p>
 
         {erreur && (
-          <div className="bg-red-50 text-alert-600 text-sm rounded-lg px-3 py-2 mb-4 text-left">
+          <div className="bg-red-50 text-alert-600 text-sm rounded-lg px-3 py-2 mb-4">
             {erreur}
           </div>
         )}

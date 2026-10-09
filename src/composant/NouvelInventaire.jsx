@@ -28,7 +28,7 @@ export default function NouvelInventaire({ onTermine }) {
 
   async function demarrer() {
     if (produitsACompter.length === 0) return;
-    const id = await demarrerInventaire(type === 'complet' ? undefined : produitsACompter);
+    const id = await demarrerInventaire(type);
     setInventaireId(id);
 
     const initial = {};
@@ -64,66 +64,64 @@ export default function NouvelInventaire({ onTermine }) {
 
   if (etape === 'selection') {
     return (
-      <div className="max-w-xl mx-auto p-4 space-y-4">
+      <div className="p-5 space-y-4">
         <div className="flex items-center gap-3">
           <button onClick={() => onTermine(null)} className="text-gray-400"><ArrowLeft size={18} /></button>
-          <h1 className="text-xl font-semibold text-gray-900">Nouvel inventaire</h1>
+          <h3 className="font-semibold text-gray-900">Nouvel inventaire</h3>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type d'inventaire</label>
-            <div className="flex gap-2">
-              <button onClick={() => setType('complet')} className={`flex-1 py-2 rounded-lg text-sm font-medium ${type === 'complet' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                Complet
-              </button>
-              <button onClick={() => setType('partiel')} className={`flex-1 py-2 rounded-lg text-sm font-medium ${type === 'partiel' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                Partiel
-              </button>
-            </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Type d'inventaire</label>
+          <div className="flex gap-2">
+            <button onClick={() => setType('complet')} className={`flex-1 py-2 rounded-lg text-sm font-medium ${type === 'complet' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              Complet
+            </button>
+            <button onClick={() => setType('partiel')} className={`flex-1 py-2 rounded-lg text-sm font-medium ${type === 'partiel' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              Partiel
+            </button>
           </div>
-
-          {type === 'partiel' && (
-            <div className="space-y-1 max-h-72 overflow-y-auto border-t border-gray-100 pt-3">
-              {produits.map((p) => (
-                <label key={p.id} className="flex items-center gap-3 py-2 px-1">
-                  <input type="checkbox" checked={produitsSelectionnes.has(p.id)} onChange={() => toggleProduit(p.id)} className="w-4 h-4" />
-                  <span className="text-sm text-gray-700">{p.nom}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          <button onClick={demarrer} disabled={type === 'partiel' && produitsSelectionnes.size === 0} className="w-full bg-brand-600 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
-            Commencer le comptage
-          </button>
         </div>
+
+        {type === 'partiel' && (
+          <div className="space-y-1 max-h-72 overflow-y-auto border-t border-gray-100 pt-3">
+            {produits.map((p) => (
+              <label key={p.id} className="flex items-center gap-3 py-2 px-1">
+                <input type="checkbox" checked={produitsSelectionnes.has(p.id)} onChange={() => toggleProduit(p.id)} className="w-4 h-4" />
+                <span className="text-sm text-gray-700">{p.nom}</span>
+              </label>
+            ))}
+          </div>
+        )}
+
+        <button onClick={demarrer} disabled={type === 'partiel' && produitsSelectionnes.size === 0} className="w-full bg-brand-600 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
+          Commencer le comptage
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto p-4 space-y-4">
+    <div className="p-5 space-y-4">
       <div className="flex items-center gap-3">
         <button onClick={() => setEtape('selection')} className="text-gray-400"><ArrowLeft size={18} /></button>
-        <h1 className="text-xl font-semibold text-gray-900">Comptage</h1>
+        <h3 className="font-semibold text-gray-900">Comptage</h3>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="border border-gray-100 rounded-xl overflow-hidden">
         <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase">
-          <span>Produit</span><span className="text-right">Théoq.</span><span className="text-right">Réel</span><span className="text-right">Écart</span>
+          <span>Produit</span><span className="text-right">Théo.</span><span className="text-right">Réel</span><span className="text-right">Écart</span>
         </div>
         <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
           {produitsACompter.map((p) => {
             const c = comptages[p.id] || { stockReel: '', motif: '' };
-            const ecart = c.stockReel !== '' ? Number(c.stockReel) - p.stock: null;
+            const ecart = c.stockReel !== '' ? Number(c.stockReel) - p.stock : null;
             return (
               <div key={p.id} className="px-4 py-2.5">
                 <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 items-center">
                   <span className="text-sm text-gray-900 truncate">{p.nom}</span>
                   <span className="text-sm text-gray-500 text-right">{p.stock}</span>
                   <input type="number" value={c.stockReel} onChange={(e) => majComptage(p.id, 'stockReel', e.target.value)} className="w-full text-right border border-gray-200 rounded px-2 py-1 text-sm" />
-                  <span className={`text-sm text-right font-medium ${ecart > 0 ? 'text-good-600' : ecart < 0 ? 'text-alert-600' : 'text-gray-400'}`}>
+                  <span className={`text-sm text-right font-medium ${ecart > 0 ? 'text-green-600' : ecart < 0 ? 'text-alert-600' : 'text-gray-400'}`}>
                     {ecart === null ? '—' : ecart > 0 ? `+${ecart}` : ecart}
                   </span>
                 </div>
@@ -139,9 +137,9 @@ export default function NouvelInventaire({ onTermine }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between text-sm">
-        <span className="text-gray-500">Produits comptés : {nombreComptes}/{produitsACompter.length}</span>
-        <span className="text-gray-500">Écarts : {nombreEcarts}</span>
+      <div className="flex items-center justify-between text-sm text-gray-500 px-1">
+        <span>Produits comptés : {nombreComptes}/{produitsACompter.length}</span>
+        <span>Écarts : {nombreEcarts}</span>
       </div>
 
       <button onClick={valider} disabled={enCours || nombreComptes === 0} className="w-full bg-brand-600 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">

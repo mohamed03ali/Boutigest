@@ -10,13 +10,11 @@ import { AuthProvider } from './services/AuthProvider';
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
- 
+ <AuthProvider>
     <CurrencyProvider>
-      <AuthProvider>
         <App />
-      </AuthProvider>
     </CurrencyProvider>
-  
+  </AuthProvider>
 </BrowserRouter>
   </StrictMode>,
 )

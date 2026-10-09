@@ -12,7 +12,7 @@ export default function ModalProduit({ produit, onFermer }) {
 
   const [form, setForm] = useState({
     nom: '', categorie: CATEGORIES_PAR_DEFAUT[0],
-    prixAchat: '', prixVente: '', stock: '', seuilReappro: '5', sku: '',
+    prixAchat: '', prixVente: '', stock: '', seuilReappro: '10', sku: '',
   });
   const [categories, setCategories] = useState(CATEGORIES_PAR_DEFAUT);
   const [nouvelleCategorie, setNouvelleCategorie] = useState('');

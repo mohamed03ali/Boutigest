@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { db } from '../db/db';
+import { useAuth } from './useAuth';
 
 export function useVente(produits) {
+  const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
   const [panier, setPanier] = useState([]);
   const [alerte, setAlerte] = useState('');
 
@@ -13,8 +16,8 @@ export function useVente(produits) {
     setAlerte('');
     const dejaDansPanier = panier.find((l) => l.produitId === produit.id)?.quantite || 0;
 
-    if (dejaDansPanier + 1 > produit.quantite) {
-      setAlerte(`Stock insuffisant pour "${produit.nom}" (${produit.quantite} disponible${produit.quantite > 1 ? 's' : ''}).`);
+    if (dejaDansPanier + 1 > produit.stock) {
+      setAlerte(`Stock insuffisant pour "${produit.nom}" (${produit.stock} disponible${produit.stock > 1 ? 's' : ''}).`);
       return;
     }
 
@@ -54,6 +57,10 @@ export function useVente(produits) {
 
   async function encaisser(remise = 0, clientId = null, modePaiement = 'cash') {
     if (panier.length === 0) return null;
+    if (!boutiqueId) {
+      setAlerte('Aucune boutique active.');
+      return null;
+    }
     if (modePaiement === 'credit' && !clientId) {
       setAlerte('Sélectionnez un client pour une vente à crédit.');
       return null;
@@ -69,13 +76,13 @@ export function useVente(produits) {
         async () => {
           for (const ligne of panier) {
             const produit = await db.produits.get(ligne.produitId);
-            if (!produit || produit.quantite < ligne.quantite) {
+            if (!produit || produit.stock < ligne.quantite) {
               throw new Error(`Stock insuffisant pour "${ligne.nom}".`);
             }
           }
 
           await db.ventes.add({
-            id: venteId, date: maintenant, total, remise, clientId, modePaiement,
+            id: venteId, date: maintenant, total, remise, clientId, modePaiement, boutiqueId,
             updatedAt: maintenant, deleted: false,
           });
 
@@ -85,19 +92,32 @@ export function useVente(produits) {
               venteId, produitId: ligne.produitId, quantite: ligne.quantite, prixUnitaire: ligne.prixVente,
               updatedAt: maintenant, deleted: false,
             });
+
             const produit = await db.produits.get(ligne.produitId);
-            await db.produits.update(ligne.produitId, { stock: produit.stock - ligne.quantite, updatedAt: maintenant });
+            const stockAvant = produit.stock;
+            const stockApres = stockAvant - ligne.quantite;
+            await db.produits.update(ligne.produitId, { stock: stockApres, updatedAt: maintenant });
+
             await db.mouvementsStock.add({
               id: crypto.randomUUID(),
-              produitId: ligne.produitId, type: 'sortie', quantite: ligne.quantite, date: maintenant,
-              updatedAt: maintenant, deleted: false,
+              produitId: ligne.produitId,
+              type: 'vente',
+              quantite: -ligne.quantite,
+              stockAvant,
+              stockApres,
+              referenceId: venteId,
+              utilisateurId: user?.id ?? null,
+              boutiqueId,
+              date: maintenant,
+              updatedAt: maintenant,
+              deleted: false,
             });
           }
 
           if (modePaiement === 'credit') {
             await db.dettes.add({
               id: crypto.randomUUID(),
-              clientId, montant: total, date: maintenant, statut: 'retard', venteId,
+              clientId, montant: total, date: maintenant, statut: 'retard', venteId, boutiqueId,
               updatedAt: maintenant, deleted: false,
             });
             const client = await db.clients.get(clientId);

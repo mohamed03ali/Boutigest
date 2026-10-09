@@ -20,7 +20,7 @@ const ICONES_CATEGORIE = {
 export default function Depenses() {
   const { depenses, ajouterDepense, supprimerDepense, totalMois } = useDepenses();
   const [categories, setCategories] = useState(Object.keys(ICONES_CATEGORIE));
-  const [form, setForm] = useState({ description: '', montant: '', categorie: 'Autre' });
+  const [form, setForm] = useState({ libelle: '', montant: '', categorie: 'Autre' });
   const [nouvelleCategorie, setNouvelleCategorie] = useState('');
   const [afficherFormulaire, setAfficherFormulaire] = useState(false);
   const [depenseASupprimer, setDepenseASupprimer] = useState(null);
@@ -36,15 +36,15 @@ export default function Depenses() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.description.trim() || Number(form.montant) <= 0) return;
+    if (!form.libelle.trim() || Number(form.montant) <= 0) return;
 
     await ajouterDepense({
-      description: form.description.trim(),
+      libelle: form.libelle.trim(),
       montant: Number(form.montant),
       categorie: form.categorie,
     });
 
-    setForm({ description: '', montant: '', categorie: 'Autre' });
+    setForm({ libelle: '', montant: '', categorie: 'Autre' });
     setAfficherFormulaire(false);
   }
 
@@ -69,7 +69,7 @@ export default function Depenses() {
 
       {afficherFormulaire && (
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)] space-y-3">
-          <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
+          <input placeholder="Description" value={form.libelle} onChange={(e) => setForm({ ...form, libelle: e.target.value })} className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
           <input type="number" placeholder="Montant (FCFA)" value={form.montant} onChange={(e) => setForm({ ...form, montant: e.target.value })} className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
           <select value={form.categorie} onChange={(e) => setForm({ ...form, categorie: e.target.value })} className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm bg-white">
             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -93,7 +93,7 @@ export default function Depenses() {
                   <Icone size={16} className="text-brand-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{d.description}</p>
+                  <p className="text-sm font-medium text-gray-900">{d.libelle}</p>
                   <p className="text-xs text-gray-400">{d.categorie}</p>
                 </div>
               </div>
@@ -111,7 +111,7 @@ export default function Depenses() {
       {depenseASupprimer && (
         <ConfirmModal
           titre="Supprimer cette dépense ?"
-          message={`"${depenseASupprimer.description}" (${depenseASupprimer.montant.toLocaleString('fr-FR')} FCFA) sera supprimée.`}
+          message={`"${depenseASupprimer.libelle}" (${depenseASupprimer.montant.toLocaleString('fr-FR')} FCFA) sera supprimée.`}
           labelConfirmer="Supprimer"
           variant="danger"
           onConfirmer={confirmerSuppression}

@@ -1,11 +1,11 @@
-import express from 'express';
-import { verifierToken } from '../middleware/auth.js';
-import { creer, obtenir } from '../controllers/boutiquesController.js';
+import { Router } from 'express';
+import { creer, lister, definirActive } from '../controllers/boutiquesController.js';
+import { verifierToken } from '../middleware/auth.js'; // adapte au nom réel chez toi
 
-const router = express.Router();
-router.use(verifierToken);
+const router = Router();
 
-router.post('/', creer);
-router.get('/', obtenir);
+router.post('/', verifierToken, creer);
+router.get('/', verifierToken, lister);           // avant: obtenir
+router.patch('/active', verifierToken, definirActive); // nouvelle route
 
 export default router;

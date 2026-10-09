@@ -6,7 +6,7 @@ import { db } from '../db/db';
 import { setSyncToken } from '../services/syncAuth';
 import { useAuth } from '../services/useAuth';
 
-const API_URL =  'http://localhost:3000' ; 
+const API_URL = 'http://localhost:3000';
 
 const QUESTIONS_SECURITE = [
   'Quel est le nom de votre pays ?',
@@ -42,7 +42,6 @@ export default function CreerCompte() {
     e.preventDefault();
     setErreur('');
 
-    // 1. Validations locales, avant tout appel réseau
     if (form.motDePasse !== form.confirmMotDePasse) {
       setErreur('Les mots de passe ne correspondent pas.');
       return;
@@ -56,9 +55,6 @@ export default function CreerCompte() {
       return;
     }
 
-    // 2. La création de compte exige une connexion (Option A) :
-    //    un compte doit toujours exister sur le serveur pour pouvoir
-    //    être retrouvé depuis un autre appareil plus tard.
     if (!navigator.onLine) {
       setErreur('Une connexion internet est nécessaire pour créer votre compte.');
       return;
@@ -66,15 +62,18 @@ export default function CreerCompte() {
 
     setChargement(true);
     try {
+      const estEmail = form.identifiant.includes('@');
+
       const reponse = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nom: form.nom,
-          identifiant: form.identifiant,
+          email: estEmail ? form.identifiant : null,
+          telephone: !estEmail ? form.identifiant : null,
           motDePasse: form.motDePasse,
           questionSecurite: form.questionSecurite,
-          reponseSecurite: form.reponseSecurite, // hachée côté serveur
+          reponseSecurite: form.reponseSecurite,
         }),
       });
 
@@ -83,11 +82,8 @@ export default function CreerCompte() {
         throw new Error(data.erreur || 'Impossible de créer le compte.');
       }
 
-      const donneesServeur = await reponse.json(); // { id, token, ... }
+      const donneesServeur = await reponse.json();
 
-      // 3. On ne hache la réponse de sécurité et le mot de passe
-      //    localement QU'APRÈS la confirmation du serveur, pour
-      //    garantir que l'id local == id serveur dès la création.
       const motDePasseHache = await bcrypt.hash(form.motDePasse, 10);
       const reponseSecuriteHachee = await bcrypt.hash(
         form.reponseSecurite.toLowerCase().trim(),
@@ -97,13 +93,13 @@ export default function CreerCompte() {
       const utilisateurLocal = {
         id: donneesServeur.id,
         nom: form.nom,
-        email: form.identifiant.includes('@') ? form.identifiant : '',
-        telephone: !form.identifiant.includes('@') ? form.identifiant : '',
+        email: estEmail ? form.identifiant : '',
+        telephone: !estEmail ? form.identifiant : '',
         motDePasse: motDePasseHache,
         questionSecurite: form.questionSecurite,
         reponseSecurite: reponseSecuriteHachee,
         role: donneesServeur.role || 'admin',
-        boutiqueId: null, // renseigné à l'étape de configuration de la boutique
+        boutiqueId: null,
         updatedAt: new Date().toISOString(),
         deleted: false,
       };

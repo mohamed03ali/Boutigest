@@ -1,14 +1,15 @@
-
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useProduits } from '../services/useProduits';
 import MouvementsStock from './MouvementsStock';
-import InventaireStock from '../composant/InventaireStock';
+import NouvelInventaire from '../composant/NouvelInventaire';
+import RapportInventaire from '../composant/RapportInventaire';
 
 export default function Stock() {
   const { produits } = useProduits();
   const [recherche, setRecherche] = useState('');
   const [onglet, setOnglet] = useState('apercu');
+  const [vueInventaire, setVueInventaire] = useState('liste'); // 'liste' | 'nouveau'
 
   const produitsFiltres = produits.filter((p) =>
     p.nom.toLowerCase().includes(recherche.toLowerCase())
@@ -92,7 +93,14 @@ export default function Stock() {
       )}
 
       {onglet === 'mouvements' && <MouvementsStock />}
-      {onglet === 'inventaire' && <InventaireStock />}
+
+      {onglet === 'inventaire' && (
+        vueInventaire === 'nouveau' ? (
+          <NouvelInventaire onTermine={() => setVueInventaire('liste')} />
+        ) : (
+          <RapportInventaire onNouvelInventaire={() => setVueInventaire('nouveau')} />
+        )
+      )}
     </div>
   );
 }

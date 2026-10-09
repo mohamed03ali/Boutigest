@@ -88,4 +88,46 @@ db.version(6).stores({
   inventaires: 'id, date, statut, updatedAt, deleted',
   inventaireLignes: 'id, inventaireId, produitId, updatedAt, deleted',
 });
+db.version(7).stores({
+  produits: 'id, nom, categorie, prixVente, prixAchat, stock, seuilReappro, sku, boutiqueId, updatedAt, deleted',
+  ventes: 'id, date, total, clientId, modePaiement, boutiqueId, updatedAt, deleted',
+  venteLignes: 'id, venteId, produitId, quantite, prixUnitaire, updatedAt, deleted',
+  mouvementsStock: 'id, produitId, type, quantite, date, boutiqueId, updatedAt, deleted',
+  clients: 'id, nom, telephone, solde, boutiqueId, updatedAt, deleted',
+  dettes: 'id, clientId, montant, date, statut, venteId, boutiqueId, updatedAt, deleted',
+  depenses: 'id, libelle, montant, categorie, date, boutiqueId, updatedAt, deleted',
+  utilisateurs: 'id, nom, email, telephone, motDePasse, role, updatedAt, deleted',
+  boutiques: 'id, nom, typeCommerce, devise, utilisateurId, updatedAt, deleted',
+  categories: 'id, type, nom, icone, boutiqueId, updatedAt, deleted',
+  zakats: 'id, date, argentCaisse, argentBanque, valeurStock, creances, dettesCourtTerme, nisab, richesseSoumise, montantZakat, paye, boutiqueId, updatedAt, deleted',
+  notifications: 'id, type, titre, message, date, lue, referenceId, boutiqueId, updatedAt, deleted',
+  inventaires: 'id, date, statut, boutiqueId, updatedAt, deleted',
+  inventaireLignes: 'id, inventaireId, produitId, updatedAt, deleted',
+});
+db.version(8).stores({
+  produits: 'id, nom, categorie, prixVente, prixAchat, stock, seuilReappro, sku, boutiqueId, updatedAt, deleted',
+  ventes: 'id, date, total, clientId, modePaiement, boutiqueId, updatedAt, deleted',
+  venteLignes: 'id, venteId, produitId, quantite, prixUnitaire, updatedAt, deleted',
+  mouvementsStock: 'id, produitId, type, quantite, date, boutiqueId, updatedAt, deleted',
+  clients: 'id, nom, telephone, solde, boutiqueId, updatedAt, deleted',
+  dettes: 'id, clientId, montant, date, statut, venteId, boutiqueId, updatedAt, deleted',
+  depenses: 'id, libelle, montant, categorie, date, boutiqueId, updatedAt, deleted',
+  utilisateurs: 'id, nom, email, telephone, motDePasse, role, boutiqueId, updatedAt, deleted',
+  boutiques: 'id, nom, typeCommerce, devise, utilisateurId, updatedAt, deleted',
+  categories: 'id, type, nom, icone, boutiqueId, updatedAt, deleted',
+  zakats: 'id, date, argentCaisse, argentBanque, valeurStock, creances, dettesCourtTerme, nisab, richesseSoumise, montantZakat, paye, boutiqueId, updatedAt, deleted',
+  notifications: 'id, type, titre, message, date, lue, referenceId, boutiqueId, updatedAt, deleted',
+  inventaires: 'id, date, statut, boutiqueId, updatedAt, deleted',
+  inventaireLignes: 'id, inventaireId, produitId, updatedAt, deleted',
+}).upgrade(async (tx) => {
+  // Répare les dépenses créées avant le renommage description → libelle,
+  // qui bloquaient la synchronisation en boucle ('libelle' NOT NULL côté serveur).
+  await tx.table('depenses').toCollection().modify((depense) => {
+    if (!depense.libelle && depense.description) {
+      depense.libelle = depense.description;
+      delete depense.description;
+      depense.updatedAt = new Date().toISOString(); // force un nouveau push correct
+    }
+  });
+});
 

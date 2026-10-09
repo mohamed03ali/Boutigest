@@ -1,17 +1,6 @@
 import jwt from 'jsonwebtoken';
 import db from '../config/db.js';
 import '../config/env.js';
-// src/routes/auth.js — applique le limiteur uniquement sur les 2 routes sensibles
-import express from 'express';
-import { limiteurAuth } from '../middleware/rateLimiter.js';
-import { register, login } from '../controllers/authController.js';
-
-const router = express.Router();
-
-router.post('/register', limiteurAuth, register);
-router.post('/login', limiteurAuth, login);
-
-export default router;
 
 export async function verifierToken(req, res, next) {
   const authHeader = req.headers.authorization;

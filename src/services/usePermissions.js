@@ -1,12 +1,13 @@
-import { useAuth } from '../services/useAuth';
+import { useAuth } from './useAuth';
 import { aAcces } from '../data/permissions';
 
 export function usePermissions() {
-  const { user } = useAuth();
-  const role = user?.role || 'vendeur';
+  const { user, roleEnCours } = useAuth();
+  const role = user?.role ?? null;
 
   return {
     role,
-    peutAcceder: (module) => aAcces(role, module),
+    chargementRole: roleEnCours,
+    peutAcceder: (module) => (role ? aAcces(role, module) : false),
   };
 }

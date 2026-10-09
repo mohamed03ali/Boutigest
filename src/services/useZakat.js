@@ -1,21 +1,28 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
+import { useAuth } from './useAuth';
 
 const TAUX_ZAKAT = 0.025;
 
 export function useZakat() {
-  const historique = useLiveQuery(
-    () => db.zakats.orderBy('date').reverse().filter((z) => !z.deleted).toArray(),
-    []
-  );
+  const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
+
+  const historique = useLiveQuery(async () => {
+    if (!boutiqueId) return [];
+    const liste = await db.zakats.where('boutiqueId').equals(boutiqueId).and((z) => !z.deleted).toArray();
+    return liste.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [boutiqueId]);
 
   async function valeurStockActuelle() {
-    const produits = await db.produits.filter((p) => !p.deleted).toArray();
+    if (!boutiqueId) return 0;
+    const produits = await db.produits.where('boutiqueId').equals(boutiqueId).and((p) => !p.deleted).toArray();
     return produits.reduce((sum, p) => sum + (p.prixAchat || 0) * (p.stock || 0), 0);
   }
 
   async function creancesActuelles() {
-    const dettes = await db.dettes.filter((d) => !d.deleted).toArray();
+    if (!boutiqueId) return 0;
+    const dettes = await db.dettes.where('boutiqueId').equals(boutiqueId).and((d) => !d.deleted).toArray();
     return dettes.filter((d) => d.statut !== 'reglee').reduce((sum, d) => sum + d.montant, 0);
   }
 
@@ -27,10 +34,11 @@ export function useZakat() {
   }
 
   async function enregistrerCalcul(donnees) {
+    if (!boutiqueId) return;
     const { richesseSoumise, montantZakat } = calculer(donnees);
     const maintenant = new Date().toISOString();
     await db.zakats.add({
-      ...donnees, id: crypto.randomUUID(), richesseSoumise, montantZakat,
+      ...donnees, id: crypto.randomUUID(), boutiqueId, richesseSoumise, montantZakat,
       date: maintenant, paye: false, updatedAt: maintenant, deleted: false,
     });
   }

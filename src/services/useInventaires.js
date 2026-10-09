@@ -1,30 +1,33 @@
-// services/useInventaires.js
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
+import { useAuth } from './useAuth';
 
 export function useInventaires() {
-  const inventaires = useLiveQuery(
-    () => db.inventaires.orderBy('date').reverse().filter((i) => !i.deleted).toArray(),
-    []
-  );
+  const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
 
-  async function demarrerInventaire(produitsACompter) {
+  const inventaires = useLiveQuery(async () => {
+    if (!boutiqueId) return [];
+    const liste = await db.inventaires.where('boutiqueId').equals(boutiqueId).and((i) => !i.deleted).toArray();
+    return liste.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [boutiqueId]);
+
+  async function demarrerInventaire(type) {
+    if (!boutiqueId) return null;
     const maintenant = new Date().toISOString();
     const inventaireId = crypto.randomUUID();
-
     await db.inventaires.add({
       id: inventaireId,
       date: maintenant,
-      type: produitsACompter.length === undefined ? 'complet' : 'partiel',
+      type,
       statut: 'en_cours',
+      boutiqueId,
       updatedAt: maintenant,
       deleted: false,
     });
-
     return inventaireId;
   }
 
-  // appelé une fois par produit compté, avec la quantité réelle saisie
   async function enregistrerComptage(inventaireId, produit, stockReel, motif = null) {
     const ecart = stockReel - produit.stock;
     await db.inventaireLignes.add({
@@ -40,8 +43,6 @@ export function useInventaires() {
     });
   }
 
-  // à l'appel de "Valider l'inventaire" : applique tous les écarts en une transaction,
-  // trace chaque ajustement dans mouvementsStock, et ne touche jamais produit.stock à la main
   async function validerInventaire(inventaireId) {
     const lignes = await db.inventaireLignes.where('inventaireId').equals(inventaireId).toArray();
     const maintenant = new Date().toISOString();
@@ -58,11 +59,14 @@ export function useInventaires() {
         await db.mouvementsStock.add({
           id: crypto.randomUUID(),
           produitId: ligne.produitId,
-          type: 'ajustement_inventaire',
-          quantiteAvant: ligne.stockTheorique,
-          quantiteApres: ligne.stockReel,
-          difference: ligne.ecart,
+          type: ligne.ecart > 0 ? 'ajustement_positif' : 'ajustement_negatif',
+          quantite: ligne.ecart,
+          stockAvant: ligne.stockTheorique,
+          stockApres: ligne.stockReel,
           motif: ligne.motif,
+          referenceId: inventaireId,
+          utilisateurId: user?.id ?? null,
+          boutiqueId,
           date: maintenant,
           updatedAt: maintenant,
           deleted: false,
@@ -73,15 +77,18 @@ export function useInventaires() {
     });
   }
 
-  return { inventaires, demarrerInventaire, enregistrerComptage, validerInventaire };
+  return { inventaires: inventaires || [], demarrerInventaire, enregistrerComptage, validerInventaire };
 }
-// services/useInventaires.js — ajoute cette fonction à la fin du fichier
+
 export function useInventaireDetail(inventaireId) {
-  return useLiveQuery(async () => {
-    if (!inventaireId) return null;
+  const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
+
+  const detail = useLiveQuery(async () => {
+    if (!inventaireId || !boutiqueId) return null;
     const inventaire = await db.inventaires.get(inventaireId);
     const lignes = await db.inventaireLignes.where('inventaireId').equals(inventaireId).filter((l) => !l.deleted).toArray();
-    const produits = await db.produits.toArray();
+    const produits = await db.produits.where('boutiqueId').equals(boutiqueId).toArray();
 
     const lignesEnrichies = lignes.map((l) => ({
       ...l,
@@ -102,5 +109,7 @@ export function useInventaireDetail(inventaireId) {
       inventaire, lignes: lignesEnrichies, conformes, ecartsPositifs, ecartsNegatifs,
       valeurTheorique, valeurReelle, ecartValeur: valeurReelle - valeurTheorique, topPertes,
     };
-  }, [inventaireId]);
+  }, [inventaireId, boutiqueId]);
+
+  return detail;
 }

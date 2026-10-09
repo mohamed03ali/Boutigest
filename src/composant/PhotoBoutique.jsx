@@ -7,26 +7,30 @@ const TAILLE_MAX = 2 * 1024 * 1024; // 2 Mo
 export default function PhotoBoutique({ boutique, onChangement }) {
   const inputRef = useRef(null);
 
-  function handleFichier(e) {
-    const fichier = e.target.files[0];
-    if (!fichier) return;
+ function handleFichier(e) {
+  const fichier = e.target.files[0];
+  if (!fichier) return;
 
-    if (fichier.size > TAILLE_MAX) {
-      alert('La photo doit faire moins de 2 Mo.');
-      return;
-    }
-
-    const lecteur = new FileReader();
-    lecteur.onload = async () => {
-      await db.boutiques.update(boutique?.id, {
-        photoBoutique: lecteur.result, // base64
-        updatedAt: new Date().toISOString(),
-      });
-      onChangement?.();
-    };
-    lecteur.readAsDataURL(fichier);
+  if (!boutique?.id) {
+    alert('Boutique en cours de chargement, réessaie dans un instant.');
+    return;
   }
 
+  if (fichier.size > TAILLE_MAX) {
+    alert('La photo doit faire moins de 2 Mo.');
+    return;
+  }
+
+  const lecteur = new FileReader();
+  lecteur.onload = async () => {
+    await db.boutiques.update(boutique.id, {
+      photoBoutique: lecteur.result,
+      updatedAt: new Date().toISOString(),
+    });
+    onChangement?.();
+  };
+  lecteur.readAsDataURL(fichier);
+}
   return (
     <button
       onClick={() => inputRef.current?.click()}

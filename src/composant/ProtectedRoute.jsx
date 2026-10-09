@@ -1,16 +1,16 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../services/useAuth";
 
-function ProtectedRoute ({children,}){
-    const {utilisateur,chargement,} = useAuth();
-    if (chargement) {
-        return (
-            <p>Chargement de Boutigest...</p>
-        )
-    }
-    if (!utilisateur) {
-        return (<Navigate to="/connexion" replace />)
-    }
-    return children
+function ProtectedRoute({ children }) {
+  const { user, initialisationEnCours, roleEnCours } = useAuth();
+
+  if (initialisationEnCours || roleEnCours) {
+    return <p>Chargement de Boutigest...</p>;
+  }
+  if (!user) {
+    return <Navigate to="/connexion" replace />;
+  }
+  return children;
 }
-export default ProtectedRoute
+
+export default ProtectedRoute;

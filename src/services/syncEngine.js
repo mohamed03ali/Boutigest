@@ -7,6 +7,7 @@ const API_URL = 'http://localhost:3000';
 const TABLES = [
   'produits', 'clients', 'ventes', 'venteLignes', 'mouvementsStock',
   'dettes', 'depenses', 'categories', 'zakats', 'notifications',
+  'inventaires', 'inventaireLignes',
 ];
 
 async function collecterChangementsLocaux(depuis) {

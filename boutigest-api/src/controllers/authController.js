@@ -1,11 +1,11 @@
+// src/controllers/authController.js
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import db from '../config/db.js';
 
 export async function register(req, res) {
-
-const { nom, telephone, email, motDePasse, boutiqueId, role, questionSecurite, reponseSecurite } = req.body;
+  const { nom, telephone, email, motDePasse, boutiqueId, role, questionSecurite, reponseSecurite } = req.body;
   if (!nom || !telephone || !motDePasse) {
     return res.status(400).json({ erreur: 'Nom, téléphone et mot de passe sont obligatoires.' });
   }
@@ -20,13 +20,13 @@ const { nom, telephone, email, motDePasse, boutiqueId, role, questionSecurite, r
     const id = randomUUID();
 
     const reponseSecuriteHachee = reponseSecurite
-  ? await bcrypt.hash(reponseSecurite.toLowerCase().trim(), 10)
-  : null;
+      ? await bcrypt.hash(reponseSecurite.toLowerCase().trim(), 10)
+      : null;
 
-await db.query(
-  'INSERT INTO utilisateurs (id, boutique_id, nom, telephone, email, mot_de_passe, role, question_securite, reponse_securite_hachee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-  [id, boutiqueId || null, nom, telephone, email || null, motDePasseHache, role || 'admin', questionSecurite || null, reponseSecuriteHachee]
-);
+    await db.query(
+      'INSERT INTO utilisateurs (id, boutique_id, nom, telephone, email, mot_de_passe, role, question_securite, reponse_securite_hachee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, boutiqueId || null, nom, telephone, email || null, motDePasseHache, role || 'admin', questionSecurite || null, reponseSecuriteHachee]
+    );
 
     const token = jwt.sign({ id, role: role || 'admin', boutiqueId: boutiqueId || null }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
@@ -58,6 +58,20 @@ export async function login(req, res) {
       id: utilisateur.id, nom: utilisateur.nom, telephone: utilisateur.telephone,
       role: utilisateur.role, boutiqueId: utilisateur.boutique_id, token,
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erreur: 'Erreur serveur.' });
+  }
+}
+
+export async function moi(req, res) {
+  try {
+    const [[utilisateur]] = await db.query(
+      'SELECT id, nom, telephone, email, role, boutique_id AS boutiqueId FROM utilisateurs WHERE id = ?',
+      [req.utilisateur.id]
+    );
+    if (!utilisateur) return res.status(404).json({ erreur: 'Utilisateur introuvable.' });
+    res.json(utilisateur);
   } catch (err) {
     console.error(err);
     res.status(500).json({ erreur: 'Erreur serveur.' });

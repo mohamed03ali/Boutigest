@@ -1,14 +1,28 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
+import { useAuth } from './useAuth';
 
 export function useProduits() {
-  const produits = useLiveQuery(
-    () => db.produits.orderBy('nom').filter((p) => !p.deleted).toArray(),
-    []
-  );
+  const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
+
+  const produits = useLiveQuery(() => {
+    if (!boutiqueId) return [];
+    return db.produits
+      .where('boutiqueId').equals(boutiqueId)
+      .and((p) => !p.deleted)
+      .sortBy('nom');
+  }, [boutiqueId]);
 
   async function ajouterProduit(donnees) {
-    await db.produits.add({ ...donnees, id: crypto.randomUUID(), updatedAt: new Date().toISOString(), deleted: false });
+    if (!boutiqueId) return;
+    await db.produits.add({
+      ...donnees,
+      id: crypto.randomUUID(),
+      boutiqueId,
+      updatedAt: new Date().toISOString(),
+      deleted: false,
+    });
   }
 
   async function modifierProduit(id, donnees) {

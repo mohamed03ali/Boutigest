@@ -48,7 +48,7 @@ export default function MotDePasseOublie() {
     try {
       const valide = await bcrypt.compare(
         reponse.toLowerCase().trim(),
-        utilisateur.reponseSecuriteHachee
+        utilisateur.reponseSecurite
       );
       if (!valide) {
         setErreur('Réponse incorrecte.');

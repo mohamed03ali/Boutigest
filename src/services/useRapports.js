@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
+import { useAuth } from './useAuth';
 
 function debutPeriode(periode) {
   const d = new Date();
@@ -20,16 +21,28 @@ function debutPeriode(periode) {
 }
 
 export function useRapports() {
+  const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
   const [periode, setPeriode] = useState('mois');
 
   const donnees = useLiveQuery(async () => {
+    if (!boutiqueId) return null;
     const debut = debutPeriode(periode);
 
-    const ventes = await db.ventes.where('date').aboveOrEqual(debut.toISOString()).reverse().sortBy('date');
+    const ventes = (await db.ventes
+      .where('date').aboveOrEqual(debut.toISOString())
+      .and((v) => v.boutiqueId === boutiqueId && !v.deleted)
+      .toArray())
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
     const venteLignes = await db.venteLignes.toArray();
-    const produits = await db.produits.toArray();
-    const clients = await db.clients.toArray();
-    const depenses = await db.depenses.where('date').aboveOrEqual(debut.toISOString()).reverse().sortBy('date');
+    const produits = await db.produits.where('boutiqueId').equals(boutiqueId).toArray();
+    const clients = await db.clients.where('boutiqueId').equals(boutiqueId).toArray();
+    const depenses = (await db.depenses
+      .where('date').aboveOrEqual(debut.toISOString())
+      .and((d) => d.boutiqueId === boutiqueId && !d.deleted)
+      .toArray())
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const idsVentesPeriode = new Set(ventes.map((v) => v.id));
     const lignesPeriode = venteLignes.filter((l) => idsVentesPeriode.has(l.venteId));
@@ -63,13 +76,13 @@ export function useRapports() {
       totalVentes, totalDepenses, beneficeBrut, beneficeNet, repartitionParCategorie,
       ventesPeriode, depensesPeriode: depenses,
     };
-  }, [periode]);
+  }, [periode, boutiqueId]);
 
   return {
     ...(donnees || {
       totalVentes: 0, totalDepenses: 0, beneficeBrut: 0, beneficeNet: 0,
       repartitionParCategorie: [], ventesPeriode: [], depensesPeriode: [],
     }),
-    recalculer: setPeriode, // Rapports.jsx appelle déjà recalculer(p) — ça devient juste un setPeriode
+    recalculer: setPeriode,
   };
 }

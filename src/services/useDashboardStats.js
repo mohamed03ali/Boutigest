@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
+import { useAuth } from './useAuth';
 
 function debutPeriode(periode) {
   const d = new Date();
@@ -19,13 +20,20 @@ function debutPeriode(periode) {
 }
 
 export function useDashboardStats(periode = 'jour') {
+  const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
+
   const stats = useLiveQuery(async () => {
+    if (!boutiqueId) return null;
     const debut = debutPeriode(periode);
 
-    const ventesPeriode = await db.ventes.where('date').aboveOrEqual(debut.toISOString()).toArray();
+    const ventesPeriode = await db.ventes
+      .where('date').aboveOrEqual(debut.toISOString())
+      .and((v) => v.boutiqueId === boutiqueId && !v.deleted)
+      .toArray();
     const ventes = ventesPeriode.reduce((sum, v) => sum + v.total, 0);
 
-    const produits = await db.produits.toArray();
+    const produits = await db.produits.where('boutiqueId').equals(boutiqueId).and((p) => !p.deleted).toArray();
     const produitsEnStock = produits.reduce((sum, p) => sum + (p.stock || 0), 0);
 
     const idsVentesPeriode = new Set(ventesPeriode.map((v) => v.id));
@@ -38,13 +46,13 @@ export function useDashboardStats(periode = 'jour') {
       if (produit) benefice += (ligne.prixUnitaire - produit.prixAchat) * ligne.quantite;
     }
 
-    const dettes = await db.dettes.toArray();
+    const dettes = await db.dettes.where('boutiqueId').equals(boutiqueId).and((d) => !d.deleted).toArray();
     const dettesImpayees = dettes.filter((d) => d.statut !== 'reglee');
     const dettesTotal = dettesImpayees.reduce((sum, d) => sum + d.montant, 0);
     const nombreClientsDettes = new Set(dettesImpayees.map((d) => d.clientId)).size;
 
     return { ventes, benefice, produitsEnStock, dettesTotal, nombreClientsDettes };
-  }, [periode]);
+  }, [periode, boutiqueId]);
 
   return stats || { ventes: 0, benefice: 0, produitsEnStock: 0, dettesTotal: 0, nombreClientsDettes: 0 };
 }

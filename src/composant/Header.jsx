@@ -5,7 +5,9 @@ import { useNotifications } from '../services/useNotifications';
 import { useAuth } from '../services/useAuth';
 import ConfirmModal from './ui/ConfirmModal';
 import { useBoutique } from '../services/useBoutique';
-export default function Header({ nomUtilisateur}) {
+import SelecteurBoutique from './SelecteurBoutique';
+
+export default function Header({ nomUtilisateur }) {
   const { nombreNonLues } = useNotifications();
   const { logout } = useAuth();
   const { boutique } = useBoutique();
@@ -34,21 +36,23 @@ export default function Header({ nomUtilisateur}) {
         <p className="text-sm text-gray-500">Voici un aperçu de votre activité aujourd'hui.</p>
       </div>
       <div className="flex items-center gap-4">
+        <SelecteurBoutique />
+
         <Link to="/notifications" className="relative">
           <Bell size={20} className="text-gray-400" />
           {nombreNonLues > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-alert-600 rounded-full" />}
         </Link>
 
         <div className="relative" ref={menuRef}>
-         <button onClick={() => setMenuOuvert((v) => !v)} className="w-9 h-9 rounded-full overflow-hidden bg-brand-100 flex items-center justify-center">
-        {boutique?.photoBoutique ? (
-          <img src={boutique.photoBoutique} alt={boutique.nom} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-brand-600 font-medium text-sm">
-            {boutique?.nom?.charAt(0).toUpperCase() || 'B'}
-          </span>
-        )}
-      </button>
+          <button onClick={() => setMenuOuvert((v) => !v)} className="w-9 h-9 rounded-full overflow-hidden bg-brand-100 flex items-center justify-center">
+            {boutique?.photoBoutique ? (
+              <img src={boutique.photoBoutique} alt={boutique.nom} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-brand-600 font-medium text-sm">
+                {boutique?.nom?.charAt(0).toUpperCase() || 'B'}
+              </span>
+            )}
+          </button>
           {menuOuvert && (
             <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-[var(--shadow-card)] py-1 z-20">
               <button

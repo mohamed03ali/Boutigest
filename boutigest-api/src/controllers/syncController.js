@@ -12,6 +12,8 @@ const TABLES = {
   categories: ['id', 'boutique_id', 'type', 'nom', 'icone'],
   zakats: ['id', 'boutique_id', 'date', 'argent_caisse', 'argent_banque', 'valeur_stock', 'creances', 'dettes_court_terme', 'nisab', 'richesse_soumise', 'montant_zakat', 'paye'],
   notifications: ['id', 'boutique_id', 'type', 'titre', 'message', 'reference_id', 'lue', 'date'],
+  inventaires: ['id', 'boutique_id', 'date', 'type', 'statut'],
+  inventaire_lignes: ['id', 'inventaire_id', 'produit_id', 'stock_theorique', 'stock_reel', 'ecart', 'motif'],
 };
 
 function versSnakeCase(objet) {
@@ -121,6 +123,13 @@ export async function pull(req, res) {
           `SELECT vl.* FROM vente_lignes vl
            JOIN ventes v ON v.id = vl.vente_id
            WHERE v.boutique_id = ? AND vl.updated_at > ?`,
+          [boutiqueId, dateDepuis]
+        );
+      } else if (nomTable === 'inventaire_lignes') {
+        [lignes] = await db.query(
+          `SELECT il.* FROM inventaire_lignes il
+           JOIN inventaires i ON i.id = il.inventaire_id
+           WHERE i.boutique_id = ? AND il.updated_at > ?`,
           [boutiqueId, dateDepuis]
         );
       } else {

@@ -1,15 +1,28 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
+import { useAuth } from './useAuth';
 
 export function useDepenses() {
-  const depenses = useLiveQuery(
-    () => db.depenses.orderBy('date').reverse().filter((d) => !d.deleted).toArray(),
-    []
-  );
+  const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
+
+  const depenses = useLiveQuery(async () => {
+    if (!boutiqueId) return [];
+    const liste = await db.depenses.where('boutiqueId').equals(boutiqueId).and((d) => !d.deleted).toArray();
+    return liste.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [boutiqueId]);
 
   async function ajouterDepense(donnees) {
+    if (!boutiqueId) return;
     const maintenant = new Date().toISOString();
-    await db.depenses.add({ ...donnees, id: crypto.randomUUID(), date: maintenant, updatedAt: maintenant, deleted: false });
+    await db.depenses.add({
+      ...donnees,
+      id: crypto.randomUUID(),
+      boutiqueId,
+      date: maintenant,
+      updatedAt: maintenant,
+      deleted: false,
+    });
   }
 
   async function supprimerDepense(id) {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { db } from '../db/db';
 import bcrypt from 'bcryptjs';
-import { setSyncToken } from './syncAuth';
+import { getSyncToken, setSyncToken } from './syncAuth';
 import { synchroniser } from './syncEngine';
 
 const API_URL = 'http://localhost:3000';
@@ -13,18 +13,64 @@ export function AuthProvider({ children }) {
     return saved ? JSON.parse(saved) : null;
   });
   const [initialisationEnCours, setInitialisationEnCours] = useState(false);
+  const [roleEnCours, setRoleEnCours] = useState(() => {
+    const saved = localStorage.getItem('currentUser');
+    const u = saved ? JSON.parse(saved) : null;
+    return !!u?.id && (!u?.role || !u?.boutiqueId);
+  });
 
   useEffect(() => {
-    if (!user?.id || user.role) return;
+    const incomplet = user?.id && (!user.role || !user.boutiqueId);
+    if (!incomplet) {
+      setRoleEnCours(false);
+      return;
+    }
 
+    setRoleEnCours(true);
     let actif = true;
-    db.utilisateurs.get(user.id).then((utilisateurLocal) => {
-      if (!actif || !utilisateurLocal?.role) return;
-      setUser(utilisateurLocal);
-      localStorage.setItem('currentUser', JSON.stringify(utilisateurLocal));
-    }).catch((err) => {
-      if (actif) console.error('Erreur chargement du rôle utilisateur:', err);
-    });
+
+    (async () => {
+      try {
+        // 1. On essaie d'abord localement
+        let utilisateurComplet = await db.utilisateurs.get(user.id);
+
+        // 2. Rôle ou boutique manquant en local → appel réseau de secours
+        if ((!utilisateurComplet?.role || !utilisateurComplet?.boutiqueId) && navigator.onLine) {
+          const token = getSyncToken();
+          if (token) {
+            const reponse = await fetch(`${API_URL}/auth/moi`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (reponse.ok) {
+              const donneesServeur = await reponse.json();
+              utilisateurComplet = {
+                ...user,
+                ...utilisateurComplet,
+                ...donneesServeur,
+                updatedAt: new Date().toISOString(),
+                deleted: false,
+              };
+              await db.utilisateurs.put(utilisateurComplet);
+            }
+          }
+        }
+
+        if (!actif) return;
+        if (!utilisateurComplet?.role || !utilisateurComplet?.boutiqueId) {
+          setRoleEnCours(false);
+          return;
+        }
+
+        setUser(utilisateurComplet);
+        localStorage.setItem('currentUser', JSON.stringify(utilisateurComplet));
+        setRoleEnCours(false);
+      } catch (err) {
+        if (actif) {
+          console.error('Erreur chargement du rôle/boutique utilisateur:', err);
+          setRoleEnCours(false);
+        }
+      }
+    })();
 
     return () => {
       actif = false;
@@ -77,6 +123,7 @@ export function AuthProvider({ children }) {
         email: donnees.email || null,
         motDePasse: motDePasseHacheLocal,
         role: donnees.role,
+        boutiqueId: donnees.boutiqueId,
         updatedAt: maintenant,
         deleted: false,
       };
@@ -102,7 +149,9 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, ouvrirSession, initialisationEnCours }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, ouvrirSession, initialisationEnCours, roleEnCours }}
+    >
       {children}
     </AuthContext.Provider>
   );

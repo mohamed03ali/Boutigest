@@ -1,12 +1,23 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
+import { useAuth } from './useAuth';
+import { TYPES_MOUVEMENT } from '../composant/constants/mouvementsStock';
 
 export function useDashboardActivite() {
+  const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
+
   const resultat = useLiveQuery(async () => {
-    const ventes = await db.ventes.orderBy('date').reverse().filter((v) => !v.deleted).limit(3).toArray();
-    const mouvements = await db.mouvementsStock.orderBy('date').reverse().filter((m) => !m.deleted).limit(2).toArray();
-    const produits = await db.produits.filter((p) => !p.deleted).toArray();
-    const clients = await db.clients.filter((c) => !c.deleted).toArray();
+    if (!boutiqueId) return { activites: [], produitsStockFaible: [] };
+
+    const ventes = (await db.ventes.where('boutiqueId').equals(boutiqueId).and((v) => !v.deleted).toArray())
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 3);
+    const mouvements = (await db.mouvementsStock.where('boutiqueId').equals(boutiqueId).and((m) => !m.deleted).toArray())
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 2);
+    const produits = await db.produits.where('boutiqueId').equals(boutiqueId).and((p) => !p.deleted).toArray();
+    const clients = await db.clients.where('boutiqueId').equals(boutiqueId).and((c) => !c.deleted).toArray();
 
     const activitesVentes = ventes.map((v) => {
       const client = clients.find((c) => c.id === v.clientId);
@@ -22,12 +33,13 @@ export function useDashboardActivite() {
 
     const activitesStock = mouvements.map((m) => {
       const produit = produits.find((p) => p.id === m.produitId);
+      const info = TYPES_MOUVEMENT[m.type] || { label: m.type, sens: m.quantite >= 0 ? 'entree' : 'sortie' };
       return {
         id: `stock-${m.id}`,
         type: 'stock',
         titre: produit?.nom || 'Produit supprimé',
-        sousTitre: m.type === 'entree' ? 'Entrée stock' : 'Sortie stock',
-        montant: `${m.quantite} unités`,
+        sousTitre: info.label,
+        montant: `${m.quantite > 0 ? '+' : ''}${m.quantite} unités`,
         date: m.date,
       };
     });
@@ -36,16 +48,13 @@ export function useDashboardActivite() {
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 4);
 
-    // corrigé : `quantite` / `seuilAlerte`, pas `stock` / `seuilReappro`
-    // — ces derniers n'existent sur aucun produit, donc la comparaison
-    // `undefined <= 10` renvoyait toujours false et la liste restait vide
     const produitsStockFaible = produits
-      .filter((p) => p.stock <= (p.seuilReappro || 10))
+      .filter((p) => p.stock > 0 && p.stock <= (p.seuilReappro || 10))
       .sort((a, b) => a.stock - b.stock)
       .slice(0, 3);
 
     return { activites, produitsStockFaible };
-  }, []);
+  }, [boutiqueId]);
 
   return {
     activites: resultat?.activites || [],
