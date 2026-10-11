@@ -25,25 +25,29 @@ function estDansLesDerniersJours(dateIso, jours) {
 
 export default function MouvementsStock() {
   const { user } = useAuth();
+  const boutiqueId = user?.boutiqueId;
   const [filtreProduit, setFiltreProduit] = useState('tous');
   const [filtreType, setFiltreType] = useState('tous');
   const [filtrePeriode, setFiltrePeriode] = useState('mois');
   const [modalOuvert, setModalOuvert] = useState(false);
 
   const produits = useLiveQuery(
-    () => db.produits.toArray(),
-    []
-  ) || [];
+  () => boutiqueId
+    ? db.produits.where('boutiqueId').equals(boutiqueId).and((p) => !p.deleted).toArray()
+    : Promise.resolve([]),
+  [boutiqueId]
+) || [];
 
-  const mouvements = useLiveQuery(
-    () => db.mouvementsStock
-      .orderBy('date')
-      .reverse()
-      .filter((m) => !m.deleted)
-      .toArray(),
-    []
-  ) || [];
-
+const mouvements = useLiveQuery(
+  () => boutiqueId
+    ? db.mouvementsStock
+        .where('boutiqueId').equals(boutiqueId)
+        .and((m) => !m.deleted)
+        .reverse()
+        .sortBy('date')
+    : Promise.resolve([]),
+  [boutiqueId]
+) || [];
   const mouvementsFiltres = useMemo(() => {
     return mouvements
       .filter((m) => filtreProduit === 'tous' || m.produitId === filtreProduit)

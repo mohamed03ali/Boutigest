@@ -26,11 +26,17 @@ export default function Rapports() {
     setPeriode(p);
     recalculer(p);
   }
-  async function telechargerRecu(vente) {
-    const lignes = await db.venteLignes.where('venteId').equals(vente.id).toArray();
-    const client = vente.clientId ? await db.clients.get(vente.clientId) : null;
-    genererFacturePDF(vente, lignes, boutique, client);
-  }
+ async function telechargerRecu(vente) {
+  const lignesBrutes = await db.venteLignes.where('venteId').equals(vente.id).toArray();
+  const lignes = await Promise.all(
+    lignesBrutes.map(async (l) => ({
+      ...l,
+      nomProduit: (await db.produits.get(l.produitId))?.nom || 'Produit supprimé',
+    }))
+  );
+  const client = vente.clientId ? await db.clients.get(vente.clientId) : null;
+  genererFacturePDF(vente, lignes, boutique, client);
+}
 
 
   const donneesGraphique = repartitionParCategorie.map((c, i) => ({

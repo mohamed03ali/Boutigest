@@ -7,9 +7,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://mohamedali.alwaysdata.n
 const TABLES = [
   'produits', 'clients', 'ventes', 'venteLignes', 'mouvementsStock',
   'dettes', 'depenses', 'categories', 'zakats', 'notifications',
-  'inventaires', 'inventaireLignes',
+  'inventaires', 'inventaireLignes', 'boutiques',
 ];
-
 async function collecterChangementsLocaux(depuis) {
   const changements = {};
   for (const table of TABLES) {

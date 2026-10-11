@@ -46,11 +46,11 @@ export default function Connexion() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
-            <span className="text-sm text-gray-700">Email ou téléphone</span>
+            <span className="text-sm text-gray-700">Numéro de téléphone</span>
             <input
               value={identifiant}
               onChange={(e) => setIdentifiant(e.target.value)}
-              placeholder="téléphone ou email"
+              placeholder="numéro de téléphone"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-brand-600"
             />
