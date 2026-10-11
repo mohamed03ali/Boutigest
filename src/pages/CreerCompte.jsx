@@ -140,7 +140,7 @@ export default function CreerCompte() {
           className="w-full rounded-xl border border-gray-200 px-3 py-2.5 mb-4 text-sm"
         />
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">Email ou téléphone</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Numero de téléphone</label>
         <input
           name="identifiant"
           value={form.identifiant}
