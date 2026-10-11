@@ -38,12 +38,13 @@ app.use('/sync', syncRoutes);
 app.get('/', (req, res) => res.json({ message: 'Boutigest API en ligne' }));
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.IP || '::';
 
 try {
-	assertRequiredEnvironment();
-	await db.query('SELECT 1');
-	app.listen(PORT, () => console.log(`API et MySQL prêts sur http://localhost:${PORT}`));
+    assertRequiredEnvironment();
+    await db.query('SELECT 1');
+    app.listen(PORT, HOST, () => console.log(`API et MySQL prêts sur [${HOST}]:${PORT}`));
 } catch (error) {
-	console.error('Connexion MySQL impossible:', error.message);
-	process.exitCode = 1;
+    console.error('Connexion MySQL impossible:', error.message);
+    process.exitCode = 1;
 }

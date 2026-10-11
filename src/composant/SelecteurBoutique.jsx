@@ -6,7 +6,7 @@ import { db } from '../db/db';
 import { useAuth } from '../services/useAuth';
 import { getSyncToken } from '../services/syncAuth';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://mohamedali.alwaysdata.net/boutigest-api';
 
 export default function SelecteurBoutique() {
   const { user, ouvrirSession } = useAuth();

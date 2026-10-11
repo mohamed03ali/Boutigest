@@ -4,7 +4,7 @@ import { db } from '../db/db';
 import { getSyncToken } from '../services/syncAuth';
 import { useAuth } from '../services/useAuth';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://mohamedali.alwaysdata.net/boutigest-api';
 
 const TYPES_COMMERCE = [
   'Épicerie',

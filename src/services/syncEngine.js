@@ -2,7 +2,7 @@ import { db } from '../db/db';
 import { getDerniereSync, setDerniereSync } from './syncMeta';
 import { getSyncToken } from './syncAuth';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://mohamedali.alwaysdata.net/boutigest-api';
 
 const TABLES = [
   'produits', 'clients', 'ventes', 'venteLignes', 'mouvementsStock',

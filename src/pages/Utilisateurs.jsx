@@ -5,7 +5,7 @@ import { useAuth } from '../services/useAuth';
 import { getSyncToken } from '../services/syncAuth';
 import ConfirmModal from '../composant/ui/ConfirmModal';
 
-const API_URL = 'http://localhost:3000'; // on repasse sur VITE_API_URL au moment du déploiement
+const API_URL = import.meta.env.VITE_API_URL || 'https://mohamedali.alwaysdata.net/boutigest-api'; // on repasse sur VITE_API_URL au moment du déploiement
 
 const ROLES = ['admin', 'gestionnaire', 'vendeur', 'caissier'];
 const LIBELLES_ROLE = {

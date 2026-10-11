@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { getSyncToken, setSyncToken } from './syncAuth';
 import { synchroniser } from './syncEngine';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://mohamedali.alwaysdata.net/boutigest-api';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {

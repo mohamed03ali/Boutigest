@@ -6,7 +6,7 @@ import { db } from '../db/db';
 import { setSyncToken } from '../services/syncAuth';
 import { useAuth } from '../services/useAuth';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://mohamedali.alwaysdata.net/boutigest-api';
 
 const QUESTIONS_SECURITE = [
   'Quel est le nom de votre pays ?',
