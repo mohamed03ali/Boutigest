@@ -15,7 +15,7 @@ export default function HistoriqueZakat() {
     <div className="bg-white rounded-xl shadow-sm">
      <div className="flex items-center gap-2 p-5 border-b border-gray-100">
   <Link to="/zakat"><ArrowLeft size={18} className="text-gray-400" /></Link>
-  <h2 className="font-semibold text-gray-900">Historique des zakats</h2>
+  <h2 className="font-semibold text-gray-900">Historique des zakats (aumônes)</h2>
 </div>
 
       <div className="divide-y divide-gray-100">
@@ -53,3 +53,4 @@ export default function HistoriqueZakat() {
     </div>
   );
 }
+

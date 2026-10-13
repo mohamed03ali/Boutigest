@@ -11,7 +11,7 @@ const MENU = [
   { to: '/clients', label: 'Clients', icon: Users, module: 'clients' },
   { to: '/dettes', label: 'Dettes', icon: Receipt, module: 'dettes' },
   { to: '/depenses', label: 'Dépenses', icon: Wallet, module: 'depenses' },
-  { to: '/zakat', label: 'Zakat', icon: Landmark, module: 'zakat' },
+  { to: '/zakat', label: 'Zakat (Aumône)', icon: Landmark, module: 'zakat' },
   { to: '/rapports', label: 'Rapports', icon: FileText, module: 'rapports' },
   { to: '/utilisateurs', label: 'Utilisateurs', icon: UsersRound, module: 'utilisateurs' },
   { to: '/parametres', label: 'Paramètres', icon: Settings, module: 'parametres' },

@@ -59,9 +59,9 @@ export default function Zakat() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-5">
-      <h2 className="font-semibold text-gray-900 mb-1">Calcul de la Zakat</h2>
+      <h2 className="font-semibold text-gray-900 mb-1">Calcul de la Zakat (Aumône)</h2>
       <div className="flex items-center justify-between  mb-1">
-1        <h2 className='font-semibold text-gray-900 mb-1'>Historique des calculs</h2>
+        <h2 className='font-semibold text-gray-900 mb-1'>Historique des calculs</h2>
           < Link to="/zakat/historique" className="flex items-center gap-1 text-xs text-brand-600 font-meduim">
           <History size={14} />
           Voir l'historique
@@ -144,3 +144,4 @@ export default function Zakat() {
     </div>
   );
 }
+

@@ -18,7 +18,6 @@ function debutPeriode(periode) {
   }
   return new Date(0);
 }
-
 export function useDashboardStats(periode = 'jour') {
   const { user } = useAuth();
   const boutiqueId = user?.boutiqueId;
@@ -27,10 +26,11 @@ export function useDashboardStats(periode = 'jour') {
     if (!boutiqueId) return null;
     const debut = debutPeriode(periode);
 
-    const ventesPeriode = await db.ventes
-      .where('date').aboveOrEqual(debut.toISOString())
-      .and((v) => v.boutiqueId === boutiqueId && !v.deleted)
+    const toutesVentes = await db.ventes
+      .where('boutiqueId').equals(boutiqueId)
+      .and((v) => !v.deleted)
       .toArray();
+    const ventesPeriode = toutesVentes.filter((v) => new Date(v.date) >= debut);
     const ventes = ventesPeriode.reduce((sum, v) => sum + v.total, 0);
 
     const produits = await db.produits.where('boutiqueId').equals(boutiqueId).and((p) => !p.deleted).toArray();

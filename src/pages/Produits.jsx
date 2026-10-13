@@ -12,7 +12,7 @@ export default function Produits() {
   const [produitSelectionne, setProduitSelectionne] = useState(null); // null = création
 
   const produitsFiltres = produits.filter((p) =>
-    p.nom.toLowerCase().includes(recherche.toLowerCase()) ||
+    p.nom.toLowerCase().includes(recherche.toLowerCase().trim()) ||
     (p.sku || '').toLowerCase().includes(recherche.toLowerCase())
   );
 

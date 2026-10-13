@@ -1,6 +1,5 @@
- 
-
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './services/useAuth';
 import { usePermissions } from './services/usePermissions';
 import Connexion from './pages/Connexion';
@@ -34,7 +33,48 @@ function RequireRole({ module, children }) {
   return peutAcceder(module) ? children : <Navigate to="/dashboard" replace />;
 }
 
+// Mémorise la dernière route visitée (pour y revenir après un redémarrage
+// de l'app provoqué par Android qui tue le processus en arrière-plan).
+function useRestaurerDerniereRoute() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // À chaque navigation, on enregistre où on se trouve.
+  useEffect(() => {
+    const pagesIgnorees = ['/connexion', '/creer-compte', '/mot-de-passe-oublie'];
+    if (!pagesIgnorees.includes(location.pathname)) {
+      localStorage.setItem(
+        'derniereRoute',
+        JSON.stringify({ chemin: location.pathname, horodatage: Date.now() })
+      );
+    }
+  }, [location.pathname]);
+
+  // Au tout premier rendu après connexion, on restaure cette route si elle
+  // est récente (moins de 10 minutes) — sinon on laisse le flux normal
+  // (redirection vers /dashboard) suivre son cours.
+  useEffect(() => {
+    if (!user) return;
+    const sauvegarde = localStorage.getItem('derniereRoute');
+    if (!sauvegarde) return;
+
+    try {
+      const { chemin, horodatage } = JSON.parse(sauvegarde);
+      const dixMinutes = 10 * 60 * 1000;
+      if (chemin && Date.now() - horodatage < dixMinutes && chemin !== '/dashboard') {
+        navigate(chemin, { replace: true });
+      }
+    } catch {
+      // Sauvegarde corrompue : on l'ignore simplement.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}
+
 export default function App() {
+  useRestaurerDerniereRoute();
+
   return (
     <Routes>
       <Route path="/connexion" element={<Connexion />} />
@@ -58,10 +98,11 @@ export default function App() {
   <Route path="/parametres" element={<RequireRole module="parametres"><Parametres /></RequireRole>} />
   <Route path="/notifications" element={<Notifications />} />
   <Route path="/activite" element={<ActiviteComplete />} />
-  
+
 </Route>
       <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
       <Route path="*" element={<Navigate to="/connexion" />} />
     </Routes>
   );
 }
+
