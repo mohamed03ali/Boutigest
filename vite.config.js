@@ -7,7 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // ÉTAPE 1 : mettre true, déployer, ouvrir le site sur chaque téléphone.
 // Le service worker se désinstalle et vide ses caches (la base locale n'est pas touchée).
 // ÉTAPE 2 : remettre false, redéployer.
-const RESET_SW = true
+const RESET_SW = false
 
 // https://vite.dev/config/
 export default defineConfig({
