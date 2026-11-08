@@ -20,10 +20,16 @@ function debutPeriode(periode) {
 }
 export function useDashboardStats(periode = 'jour') {
   const { user } = useAuth();
-  const boutiqueId = user?.boutiqueId;
+ 
 
   const stats = useLiveQuery(async () => {
+    if (!user?.id) return null;
+
+    // Même source que useBoutique : Dexie d'abord, contexte en secours
+    const utilisateurLocal = await db.utilisateurs.get(user.id);
+    const boutiqueId = utilisateurLocal?.boutiqueId || user.boutiqueId;
     if (!boutiqueId) return null;
+
     const debut = debutPeriode(periode);
 
     const toutesVentes = await db.ventes
@@ -52,7 +58,7 @@ export function useDashboardStats(periode = 'jour') {
     const nombreClientsDettes = new Set(dettesImpayees.map((d) => d.clientId)).size;
 
     return { ventes, benefice, produitsEnStock, dettesTotal, nombreClientsDettes };
-  }, [periode, boutiqueId]);
+  }, [periode, user?.id, user?.boutiqueId]);
 
   return stats || { ventes: 0, benefice: 0, produitsEnStock: 0, dettesTotal: 0, nombreClientsDettes: 0 };
 }

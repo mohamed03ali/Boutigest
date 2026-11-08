@@ -27,4 +27,5 @@ export function useBoutique() {
   }
 
   return { boutique: boutique || null, modifierBoutique };
+  
 }
