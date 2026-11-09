@@ -77,6 +77,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="dashboard" replace />} />
       <Route path="/connexion" element={<Connexion />} />
       <Route path="/creer-compte" element={<CreerCompte />} />
       <Route
